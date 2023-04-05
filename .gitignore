@@ -1,0 +1,17 @@
+# Build
+*build*/*
+.idea/*
+.vscode/
+/data
+.DS_Store
+test.cpp
+
+# Test
+/test
+file/
+examples
+src/bak
+*.vtk
+*.value
+*.mesh
+*.remesh
