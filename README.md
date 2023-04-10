@@ -8,6 +8,10 @@
 -->
 # MeshAC
 
+A 3D Mesh Generation and Adaptation Package for Multiscale (atomistic-to-continuum) Coupling Simulation for Materials Defects
+
+![two voids](./data/two_voids.jpg)
+
 ## Installation
 
 ## Usage
