@@ -12,4 +12,12 @@
 
 ## Usage
 
+### A/C coupling implemented in Julia
+
+Atomistic-to-continuum coupling method in Julia. The multi-scale model is coupled by BGFC method.
+
+The atomistic model is based on the Julia package JuLIP.
+
+Please do remember to modify the path of mesher3d in AtC constructor (AtC.jl).
+
 ## Publications
