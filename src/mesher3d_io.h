@@ -1,13 +1,12 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2022-03-26 22:06:24
- * @LastEditTime: 2022-05-06 12:44:30
+ * @LastEditTime: 2023-04-10 08:57:29
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/mesher3d_io.h
+ * @FilePath: /MeshAC/src/mesher3d_io.h
  */
-#ifndef _MESHER3D_IO_
-#define _MESHER3D_IO_
+#pragma once
 
 #include "tetgen.h"
 #include "triangle.h"
@@ -15,10 +14,10 @@
 #include <string>
 #include <vector>
 #include <array>
-#include "vector3d.h"
+#include "Vector3D.h"
 
 
-
+namespace MeshAC{
 
 void loadMesh(tetgenio *in, std::string filePath);
 
@@ -35,5 +34,6 @@ void loadNodesWithLabel(tetgenio &tetIn, std::string filePath, Vector3D &max, Ve
 void loadNodesWithLabel(tetgenio &tetIn, std::string filePath, Vector3D &max, Vector3D &min, Vector3D &omax, Vector3D &omin);//useless
 void loadNodesWithLabel(tetgenio &tetIn, std::string filePath, Vector3D &max, Vector3D &min);
 
+}
 
-#endif
+

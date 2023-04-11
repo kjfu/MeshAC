@@ -8,11 +8,12 @@
 #include <ctime>
 #include "mesh.h"
 #include "triangle.h"
-#include "surfaceMesh.h"
+#include "SurfaceMesh.h"
 #include "MeshRefiner.h"
 #include <unordered_set>
 #include <fstream>
 
+namespace MeshAC{
 void generateConvexHull(const std::string &fileIn, const std::string &fileOut){
 	tetgenio in, out;
 	loadMesh(&in, fileIn);
@@ -673,7 +674,7 @@ void extractBorder(std::vector<Tetrahedron *>&tets, SurfaceMesh &aSurface){
 
     for(auto f: subTriangleSet){
 
-		TriangleElement *tri = new TriangleElement(getNode(f.forms[0]), getNode(f.forms[1]), getNode(f.forms[2]));
+		Triangle *tri = new Triangle(getNode(f.forms[0]), getNode(f.forms[1]), getNode(f.forms[2]));
 		aSurface.triangles.push_back(tri);
         
     }
@@ -1335,7 +1336,7 @@ void parseZHandleV2(SurfaceMesh &zHandleSurface, Vector3D xyzmax, Vector3D xyzmi
 			n->edit = 0;
 		}
 	}
-	std::vector<TriangleElement *> delTriangles;
+	std::vector<Triangle *> delTriangles;
 	for (auto &t: zHandleSurface.triangles){
 		int count1 = 0;
 		int count2 = 0;
@@ -1361,7 +1362,7 @@ void parseZHandleV2(SurfaceMesh &zHandleSurface, Vector3D xyzmax, Vector3D xyzmi
 	for(auto &t: delTriangles){
 		for(int i=0; i<3; i++){
 
-			TriangleElement *tt = t->adjacentTriangles[i][0];
+			Triangle *tt = t->adjacentTriangles[i];
 			if (tt->edit==0){
 
 				if (t->edit==1){
@@ -1613,7 +1614,7 @@ void parseZHandle(SurfaceMesh &zHandleSurface, double top, double bottom,
 			n->edit = 0;
 		}
 	}
-	std::vector<TriangleElement *> delTriangles;
+	std::vector<Triangle *> delTriangles;
 	for (auto &t: zHandleSurface.triangles){
 		int count1 = 0;
 		int count2 = 0;
@@ -1638,7 +1639,7 @@ void parseZHandle(SurfaceMesh &zHandleSurface, double top, double bottom,
 	for(auto &t: zHandleSurface.triangles){
 		if (t->edit){
 			for(int i=0; i<3; i++){
-				TriangleElement *tt = t->adjacentTriangles[i][0];
+				Triangle *tt = t->adjacentTriangles[i];
 				if (tt->edit==0){
 
 					if (t->edit==1){
@@ -2019,7 +2020,7 @@ void generateConvaxHullFromPointsIn3DRemoveHoles(tetgenio &tet, Mesh &goalMesh, 
 		if(e->edit) continue;
 		for(int i=0; i<4; i++){
 			if (e->adjacentTetrahedrons[i]==nullptr || e->adjacentTetrahedrons[i]->edit){
-				TriangleElement *tri = new TriangleElement(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
+				Triangle *tri = new Triangle(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
 				goalSurface.triangles.push_back(tri);
 			}
 		}
@@ -2087,7 +2088,7 @@ void generateConvaxHullFromPointsIn3D(tetgenio &tet, Mesh &goalMesh, SurfaceMesh
 		for(int i=0; i<4; i++){
 
 			if (e->adjacentTetrahedrons[i]==nullptr){
-				TriangleElement *tri = new TriangleElement(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
+				Triangle *tri = new Triangle(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
 				goalSurface.triangles.push_back(tri);
 			}
 		}
@@ -2186,7 +2187,7 @@ void generateConvaxHullFromPointsIn3D(tetgenio &tet, Vector3D &oxyzmax, Vector3D
 		if(e->edit) continue;
 		for(int i=0; i<4; i++){
 			if (e->adjacentTetrahedrons[i]==nullptr || e->adjacentTetrahedrons[i]->edit){
-				TriangleElement *tri = new TriangleElement(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
+				Triangle *tri = new Triangle(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
 				goalSurface.triangles.push_back(tri);
 			}
 		}
@@ -2453,4 +2454,5 @@ void analysisQuality(const std::string &fileIn, const std::string &fileOut){
 	}
 
 
+}
 }

@@ -6,13 +6,13 @@
 #include <fstream>
 #include <sstream>
 #include "common.h"
-#include "surfaceMesh.h"
+#include "SurfaceMesh.h"
 #include <vector>
 #include <queue>
 #include <unordered_set>
 
 
-
+namespace MeshAC{
 
 void Mesh::rebuildIndices(){
     for(int i=0; i<nodes.size(); i++){
@@ -160,7 +160,7 @@ void Mesh::extractBorder(SurfaceMesh &aSurface){
 
     for(auto f:subTriangleSet){
         // for(auto f: kv.second){
-        TriangleElement *tri = new TriangleElement(getNode(f.forms[0]), getNode(f.forms[1]), getNode(f.forms[2]));
+        Triangle *tri = new Triangle(getNode(f.forms[0]), getNode(f.forms[1]), getNode(f.forms[2]));
         aSurface.triangles.push_back(tri);
         // }
     }
@@ -1401,4 +1401,5 @@ void Mesh::exportVTK(const std::string &filePath){
 
     file.close();
 
+}
 }

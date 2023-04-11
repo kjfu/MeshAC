@@ -14,16 +14,14 @@ include_directories(
 set(MESHAC_SRCS
     ./src/main.cpp
     ./src/mesh.cpp
-    ./src/edge.cpp
     ./src/mesher3d_core.cpp
     ./src/mesher3d_io.cpp
     ./src/MeshRefiner.cpp
     ./src/MeshSwapper.cpp
     ./src/SpatialSearcher.cpp
     ./src/sphere.cpp
-    ./src/surfaceMesh.cpp
-    ./src/vector3d.cpp
-    ./src/hashEdge.cpp
+    ./src/SurfaceMesh.cpp
+    ./src/CommandParser.cpp
 )
 
 #tetgen

@@ -2,8 +2,8 @@
 #include<array>
 #include<cmath>
 #include <vector>
-class Vector3D;
-double distance(const Vector3D &n0, const Vector3D &n1);
+namespace MeshAC{
+
 
 
 class Vector3D{    
@@ -185,6 +185,15 @@ public:
 };
 
 
+inline double distance(const Vector3D &n0, const Vector3D &n1){
+    double rst=0;
+    for(int i=0; i<3; i++){
+        double d = n0[i] - n1[i];
+        rst += d*d;
+    }
 
+    return sqrt(rst);
+}
+}
 
 

@@ -1,14 +1,15 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-27 19:42:11
- * @LastEditTime: 2023-03-28 14:11:44
+ * @LastEditTime: 2023-04-10 08:52:07
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/MeshRefiner.h
+ * @FilePath: /MeshAC/src/MeshRefiner.h
  */
 #pragma once
 #include "mesh.h"
 #include <memory>
+namespace MeshAC{
 class MeshRefiner{
 public:
     Mesh* mesh;
@@ -18,3 +19,4 @@ public:
 
     void refine(int firstIndex, std::vector<int> elementIndices, int subdomain, int nodeLabel);
 };
+}

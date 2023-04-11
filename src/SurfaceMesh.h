@@ -1,10 +1,10 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-06 01:09:29
- * @LastEditTime: 2023-04-06 01:29:15
+ * @LastEditTime: 2023-04-11 14:20:11
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /MeshAC/src/surfaceMesh.h
+ * @FilePath: /MeshAC/src/SurfaceMesh.h
  */
 #pragma once
 
@@ -13,11 +13,9 @@
 #include <string>
 #include <unordered_map>
 #include "tetgen.h"
-#include "mesh.h"
-#include "node.h"
+#include "Element.h"
 #include "triangle.h"
-
-
+namespace MeshAC{
 enum PROJECTION_TYPE{
     XY_PLANE = 0,
     YZ_PLANE = 1,
@@ -26,7 +24,7 @@ enum PROJECTION_TYPE{
 class SurfaceMesh{
 public:
     std::vector<Node *> nodes;
-    std::vector<TriangleElement *> triangles;
+    std::vector<Triangle *> triangles;
     std::unordered_map<int, std::string> zoneNames;
     SurfaceMesh(){}
     ~SurfaceMesh(){
@@ -49,14 +47,8 @@ public:
 
     void rebuildTriangleAdjacency();
 
-    // void deleteTriangles(std::vector<TriangleElement*> delTriangles);
 
-
-    void checkNonManifoldEdges(std::vector<Edge> &nonManifoldEdges);
-
-
-
-    void deleteTriangles(std::vector<TriangleElement *> &toDelTriangles);
+    void deleteTriangles(std::vector<Triangle *> &toDelTriangles);
 
     
     void projectTRIANGULATEIO(triangulateio &in, PROJECTION_TYPE projectionType, double offset);
@@ -78,3 +70,4 @@ public:
     void estimateSizing();
 };
 
+}

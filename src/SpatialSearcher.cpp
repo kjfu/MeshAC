@@ -1,15 +1,15 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2022-01-21 17:11:50
- * @LastEditTime: 2023-03-28 16:39:31
+ * @LastEditTime: 2023-04-10 08:53:40
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/SpatialSearcher.cpp
+ * @FilePath: /MeshAC/src/SpatialSearcher.cpp
  */
 #include "SpatialSearcher.h"
 #include "mesh.h"
 
-
+namespace MeshAC{
 void SpatialSearcher::buildAABBTree(){
 
     for (auto tet: mesh->tetrahedrons){
@@ -110,4 +110,4 @@ void SpatialSearcher::insertTetrahedron(Tetrahedron *pTet){
     aTree.insertParticle(id, lowerBound, upperBound);
 }
 
-
+}

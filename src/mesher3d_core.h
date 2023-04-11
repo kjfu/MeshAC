@@ -1,18 +1,19 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2021-09-07 21:09:25
- * @LastEditTime: 2023-03-31 15:20:40
+ * @LastEditTime: 2023-04-11 14:46:21
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/mesher3d_core.h
+ * @FilePath: /MeshAC/src/mesher3d_core.h
  */
 #pragma once
 #include "tetgen.h"
 #include <vector>
 #include <string>
 #include "triangle.h"
-#include "surfaceMesh.h"
-
+#include "SurfaceMesh.h"
+#include "mesh.h"
+namespace MeshAC{
 void analysisQuality(const std::string &fileIn, const std::string &fileOut);
 
 void generateConvexHull(const std::string &fileIn, const std::string &fileOut);
@@ -59,3 +60,4 @@ void resetPoints(tetgenio &tet, Vector3D pMax, Vector3D pMin, std::vector<int> &
 void extractBorder(std::vector<Tetrahedron *>&tets, SurfaceMesh &aSurface);
 void generateBoundingBoxTETGENIO(tetgenio &tetIn, Vector3D pMax, Vector3D pMin, double size, tetgenio &tetOut);
 void generateBoundingBoxTETGENIO(Vector3D xyzmax, Vector3D xyzmin, double size, SurfaceMesh &aSurface);
+}

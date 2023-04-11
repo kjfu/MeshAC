@@ -1,7 +1,16 @@
+/*
+ * @Author: Kejie Fu
+ * @Date: 2023-04-06 01:08:36
+ * @LastEditTime: 2023-04-10 09:51:44
+ * @LastEditors: Kejie Fu
+ * @Description: 
+ * @FilePath: /MeshAC/src/aabbox.h
+ */
 #pragma once
 #include <array>
-#include "vector3d.h"
+#include "Vector3D.h"
 
+namespace MeshAC{
 class AABBox
 {
 public:
@@ -83,3 +92,4 @@ public:
         && another.minimum[2] <= this->maximum[2] + tolerance);
     }
 };
+}

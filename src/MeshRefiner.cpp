@@ -1,15 +1,17 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-27 19:42:30
- * @LastEditTime: 2023-03-28 15:57:59
+ * @LastEditTime: 2023-04-10 08:52:36
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/MeshRefiner.cpp
+ * @FilePath: /MeshAC/src/MeshRefiner.cpp
  */
 #include "MeshRefiner.h"
-#include "SubEntities.h"
+#include "SubEntity.h"
 #include "MeshSwapper.h"
 #include <iostream>
+
+namespace MeshAC{
 void MeshRefiner::refine(int firstIndex, std::vector<int> elementIndices, int subdomain, int nodeLabel){
     double minQ=1000;
     double maxQ=-1;
@@ -64,4 +66,5 @@ void MeshRefiner::refine(int firstIndex, std::vector<int> elementIndices, int su
     }
     std::cout << "Quality after refine:" << minQ2 << std::endl;
 
+}
 }

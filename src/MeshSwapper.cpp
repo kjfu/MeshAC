@@ -1,13 +1,14 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-27 19:35:28
- * @LastEditTime: 2023-03-28 15:59:28
+ * @LastEditTime: 2023-04-10 08:53:25
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/MeshSwapper.cpp
+ * @FilePath: /MeshAC/src/MeshSwapper.cpp
  */
 #include "MeshSwapper.h"
 #include <unordered_map>
+namespace MeshAC{
     void MeshSwapper::SwapOptimization(int SubdomainNumber, double minQuality){
         mesh->rebuildTetrahedronsAdjacency();
         for(auto tet: mesh->tetrahedrons){
@@ -143,4 +144,5 @@
 
 
     }
+}
 

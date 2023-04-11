@@ -1,14 +1,15 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-27 20:08:02
- * @LastEditTime: 2023-03-28 12:11:12
+ * @LastEditTime: 2023-04-11 14:48:56
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/GroupEntities.h
+ * @FilePath: /MeshAC/src/GroupEntity.h
  */
 #pragma once
 #include <vector>
-#include "SubEntities.h"
+#include "SubEntity.h"
+namespace MeshAC{
 class VolumeShell{
 public:
     bool closed=true;
@@ -32,3 +33,4 @@ public:
     Node *endNode;
     VolumeUmbrella(){};
 };
+}

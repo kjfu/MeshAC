@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <limits>
+namespace MeshAC{
 void loadMesh(tetgenio *in, std::string filePath){
 
 	in->mesh_dim = 3;
@@ -361,3 +362,4 @@ void saveAsMESH(tetgenio *out, std::string filePath, std::vector<int> tetMarkers
     outfile.close();	
 }
 
+}

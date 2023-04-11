@@ -1,16 +1,17 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2022-01-21 01:40:25
- * @LastEditTime: 2023-03-28 16:40:08
+ * @LastEditTime: 2023-04-10 09:51:08
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/SpatialSearcher.h
+ * @FilePath: /MeshAC/src/SpatialSearcher.h
  */
 #pragma once
 #include "AABB.h"
 #include <unordered_map>
 #include <stack>
-#include "vector3d.h"
+#include "Vector3D.h"
+namespace MeshAC{
 class Mesh;
 class Tetrahedron;
 
@@ -48,3 +49,4 @@ public:
     void updateTetrahedron(Tetrahedron *pTet);
 
 };
+}

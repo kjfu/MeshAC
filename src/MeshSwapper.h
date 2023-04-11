@@ -1,16 +1,17 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-27 19:35:10
- * @LastEditTime: 2023-03-28 13:06:56
+ * @LastEditTime: 2023-04-11 14:49:41
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/MeshSwapper.h
+ * @FilePath: /MeshAC/src/MeshSwapper.h
  */
 #pragma once
 #include "mesh.h"
-#include "SubEntities.h"
-#include "GroupEntities.h"
+#include "SubEntity.h"
+#include "GroupEntity.h"
 #include <memory>
+namespace MeshAC{
 class MeshSwapper{
 public:
     Mesh *mesh;
@@ -25,3 +26,4 @@ public:
 
 
 };
+}

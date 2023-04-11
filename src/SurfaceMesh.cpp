@@ -1,13 +1,12 @@
-#include "surfaceMesh.h"
+#include "SurfaceMesh.h"
 #include "common.h"
 #include <fstream>
-#include "hashEdge.h"
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
 #include "kdtree.h"
-
+namespace MeshAC{
 void SurfaceMesh::exportVTK(const std::string &filePath){
     std::ofstream file(filePath);
     file << "# vtk DataFile Version 3.0" << std::endl;
@@ -106,7 +105,7 @@ void SurfaceMesh::loadMESH(const std::string &filePath){
                     int n0, n1, n2;
                     int label;
                     triangleStream >> n0 >> n1 >> n2 >> label;
-                    TriangleElement *e = new TriangleElement(nodes[n0-1], nodes[n1-1], nodes[n2-1]);
+                    Triangle *e = new Triangle(nodes[n0-1], nodes[n1-1], nodes[n2-1]);
                     e->label = label;
                     triangles.push_back(e);
                 }
@@ -120,41 +119,29 @@ void SurfaceMesh::loadMESH(const std::string &filePath){
 
 
 void SurfaceMesh::rebuildTriangleAdjacency(){
-    HashEdgeTable anEdgeTable;
-    
-    for (auto &t: triangles){
+    std::unordered_map<SubEdge, SubEdge, SubEdgeHasher, SubEdgeEqual> edgeMap;
+    for(auto tri: triangles){
+        tri->adjacentTriangles[0]=nullptr;
+        tri->adjacentTriangles[1]=nullptr;
+        tri->adjacentTriangles[2]=nullptr;
+    }
+    for(auto tri: triangles){
         for(int i=0; i<3; i++){
-            t->adjacentTriangles[i].clear();
-            Edge e = t->edge(i);
-            anEdgeTable.insert(e);
+            SubEdge sub = tri->getSubEdge(i);
+            if(edgeMap.count(sub)){
+                SubEdge &adj = edgeMap[sub];
+                adj.triangle->adjacentTriangles[adj.iLocal] = tri;
+                tri->adjacentTriangles[i]=adj.triangle;
+            }
+            else{
+                edgeMap[sub] = sub;
+            }
         }
     }
-
-    for(auto &t: triangles){
-        for(int i=0; i<3; i++){
-            if (t->adjacentTriangles[i].empty()){
-                std::vector<Edge> edges;
-                Edge keyEdge = t->edge(i);
-                if(anEdgeTable.search(keyEdge, edges)){
-                    for(int j=0; j<edges.size(); j++){
-                        TriangleElement* currentTriangle = edges[j].tri;
-                        for(int k=0; k<edges.size(); k++){
-                            Edge goalEdge = edges[k];
-                            if(goalEdge.tri != currentTriangle){
-                                goalEdge.tri->adjacentTriangles[goalEdge.localIndexOfTriangle].push_back(currentTriangle);
-                            }
-                        }
-                    }
-                }
-                
-            } 
-        }
-    }
-
 }
 
 
-// void SurfaceMesh::deleteTriangles(std::vector<TriangleElement*> delTriangles){
+// void SurfaceMesh::deleteTriangles(std::vector<Triangle*> delTriangles){
 //     for(auto t: triangles){
 //         t->edit = 0;
 //         for(auto n:t->nodes){
@@ -239,7 +226,7 @@ void SurfaceMesh::loadPLY(const std::string &filePath){
                     std::stringstream faceStream(faceLine);
                     int tmp, n0, n1, n2;
                     faceStream >> tmp >> n0 >> n1 >> n2;
-                    TriangleElement *t = new TriangleElement(nodes[n0], nodes[n1], nodes[n2]);
+                    Triangle *t = new Triangle(nodes[n0], nodes[n1], nodes[n2]);
                     triangles.push_back(t);
                 }
             }
@@ -321,7 +308,7 @@ void SurfaceMesh::loadVTK(const std::string &filePath){
                         std::string tmp, n0, n1, n2;
                         subStream >> tmp >> n0 >> n1 >> n2 ;
                         if(n2.size()>0){
-                            TriangleElement *t = new TriangleElement(nodes[std::stoi(n0)], nodes[std::stoi(n1)], nodes[std::stoi(n2)]);
+                            Triangle *t = new Triangle(nodes[std::stoi(n0)], nodes[std::stoi(n1)], nodes[std::stoi(n2)]);
                             triangles.push_back(t);
                             get++; 
                         } 
@@ -353,7 +340,7 @@ void SurfaceMesh::addSubSurfaceMesh(SurfaceMesh &another){
         
         }
 
-        TriangleElement *tri = new TriangleElement(nodesToAdd[0], nodesToAdd[1], nodesToAdd[2]);
+        Triangle *tri = new Triangle(nodesToAdd[0], nodesToAdd[1], nodesToAdd[2]);
         tri->label = e->label;
         this->triangles.push_back(tri);
     }
@@ -377,7 +364,7 @@ void SurfaceMesh::exportSU2(const std::string &filePath){
     }
 
 
-    std::unordered_map<int, std::vector<TriangleElement *>> zones;
+    std::unordered_map<int, std::vector<Triangle *>> zones;
     for(auto e: triangles){
         zones[e->label].push_back(e);
     }
@@ -432,46 +419,46 @@ void SurfaceMesh::exportTETGENIO(tetgenio &out){
 }
 
 
-void  SurfaceMesh::checkNonManifoldEdges(std::vector<Edge> &nonManifoldEdges){
-    HashEdgeTable anEdgeTable;
+// void  SurfaceMesh::checkNonManifoldEdges(std::vector<Edge> &nonManifoldEdges){
+//     HashEdgeTable anEdgeTable;
     
-    for (auto &t: triangles){
-        for(int i=0; i<3; i++){
-            t->adjacentTriangles[i].clear();
-            Edge e = t->edge(i);
-            anEdgeTable.insert(e);
-        }
-    }
+//     for (auto &t: triangles){
+//         for(int i=0; i<3; i++){
+//             t->adjacentTriangles[i].clear();
+//             Edge e = t->edge(i);
+//             anEdgeTable.insert(e);
+//         }
+//     }
 
 
-    for(auto &t: triangles){
-        for(int i=0; i<3; i++){
-            if (t->adjacentTriangles[i].empty()){
-                std::vector<Edge> edges;
-                Edge keyEdge = t->edge(i);
-                if(anEdgeTable.search(keyEdge, edges)){
-                    for(int j=0; j<edges.size(); j++){
-                        TriangleElement* currentTriangle = edges[j].tri;
-                        for(int k=0; k<edges.size(); k++){
-                            Edge goalEdge = edges[k];
-                            if(goalEdge.tri != currentTriangle){
-                                goalEdge.tri->adjacentTriangles[goalEdge.localIndexOfTriangle].push_back(currentTriangle);
-                            }
-                        }
-                    }
-                    if(edges.size()>2){
-                        nonManifoldEdges.push_back(keyEdge);
-                    }
-                }
-            } 
-        }
-    }
+//     for(auto &t: triangles){
+//         for(int i=0; i<3; i++){
+//             if (t->adjacentTriangles[i].empty()){
+//                 std::vector<Edge> edges;
+//                 Edge keyEdge = t->edge(i);
+//                 if(anEdgeTable.search(keyEdge, edges)){
+//                     for(int j=0; j<edges.size(); j++){
+//                         Triangle* currentTriangle = edges[j].tri;
+//                         for(int k=0; k<edges.size(); k++){
+//                             Edge goalEdge = edges[k];
+//                             if(goalEdge.tri != currentTriangle){
+//                                 goalEdge.tri->adjacentTriangles[goalEdge.localIndexOfTriangle].push_back(currentTriangle);
+//                             }
+//                         }
+//                     }
+//                     if(edges.size()>2){
+//                         nonManifoldEdges.push_back(keyEdge);
+//                     }
+//                 }
+//             } 
+//         }
+//     }
 
-}
+// }
 
 
 
-void SurfaceMesh::deleteTriangles(std::vector<TriangleElement *> &toDelTriangles){
+void SurfaceMesh::deleteTriangles(std::vector<Triangle *> &toDelTriangles){
     for(auto n: nodes){
         n->edit = 1;
     }
@@ -495,7 +482,8 @@ void SurfaceMesh::deleteTriangles(std::vector<TriangleElement *> &toDelTriangles
     for(int i=0; i<triangles.size(); i++){
         if(triangles[i]->edit){
             delete triangles[i];
-            triangles.erase(triangles.begin()+i);
+            triangles[i]=triangles.back();
+            triangles.pop_back();
             i--;
         }
     }
@@ -503,7 +491,8 @@ void SurfaceMesh::deleteTriangles(std::vector<TriangleElement *> &toDelTriangles
     for(int i=0; i<nodes.size(); i++){
         if(nodes[i]->edit){
             delete nodes[i];
-            nodes.erase(nodes.begin()+i);
+            nodes[i]=nodes.back();
+            nodes.pop_back();
             i--;
         }
     }
@@ -543,7 +532,7 @@ void SurfaceMesh::mergeSurfaceMesh(SurfaceMesh &another, double tolerance){
 
     nodes.insert(nodes.end(), addNodes.begin(), addNodes.end());
     for(auto e: another.triangles){
-        TriangleElement *t = new TriangleElement(
+        Triangle *t = new Triangle(
         nodeMap[e->nodes[0]]
         , nodeMap[e->nodes[1]]
         , nodeMap[e->nodes[2]]);
@@ -578,7 +567,7 @@ void SurfaceMesh::projectTRIANGULATEIO(triangulateio &in, PROJECTION_TYPE projec
     }
 
     for(int i=0; i<in.numberoftriangles; i++){
-        TriangleElement *t = new TriangleElement(nodes[in.trianglelist[3*i]-1], nodes[in.trianglelist[3*i+1]-1], nodes[in.trianglelist[3*i+2]-1]);
+        Triangle *t = new Triangle(nodes[in.trianglelist[3*i]-1], nodes[in.trianglelist[3*i+1]-1], nodes[in.trianglelist[3*i+2]-1]);
         triangles.push_back(t);
     }
 
@@ -597,7 +586,7 @@ void SurfaceMesh::cloneSurfaceMesh(SurfaceMesh &another){
     }
 
     for(auto e: another.triangles){
-        TriangleElement *ee = new TriangleElement(nodeMap[e->nodes[0]], nodeMap[e->nodes[1]], nodeMap[e->nodes[2]]);
+        Triangle *ee = new Triangle(nodeMap[e->nodes[0]], nodeMap[e->nodes[1]], nodeMap[e->nodes[2]]);
         ee->label = e->label;
         triangles.push_back(ee);
     }
@@ -623,7 +612,7 @@ void SurfaceMesh::loadTETGENIO(tetgenio &in){
 
     for(int i=0; i<in.numberoftrifaces; i++){
         // if (in.trifacemarkerlist[i]==1){
-            TriangleElement *e = new TriangleElement(getNode(in.trifacelist[3*i]), getNode(in.trifacelist[3*i+1]), getNode(in.trifacelist[3*i+2]));
+            Triangle *e = new Triangle(getNode(in.trifacelist[3*i]), getNode(in.trifacelist[3*i+1]), getNode(in.trifacelist[3*i+2]));
             triangles.push_back(e);
         // }
     }
@@ -668,4 +657,5 @@ void SurfaceMesh::estimateSizing(){
             }
         }
     }
+}
 }

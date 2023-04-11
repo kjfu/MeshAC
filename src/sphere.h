@@ -1,7 +1,15 @@
+/*
+ * @Author: Kejie Fu
+ * @Date: 2023-04-06 01:09:29
+ * @LastEditTime: 2023-04-10 09:50:57
+ * @LastEditors: Kejie Fu
+ * @Description: 
+ * @FilePath: /MeshAC/src/sphere.h
+ */
 #pragma once
-#include "vector3d.h"
+#include "Vector3D.h"
 
-
+namespace MeshAC{
 class Sphere{
 public:
     Vector3D center;
@@ -16,7 +24,7 @@ public:
 
 
 };
-
+}
 
 
 

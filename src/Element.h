@@ -1,20 +1,25 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-28 01:53:43
- * @LastEditTime: 2023-03-28 16:28:13
+ * @LastEditTime: 2023-04-11 14:56:29
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/tetrahedron.h
+ * @FilePath: /MeshAC/src/Element.h
  */
 #pragma once
-#include "node.h"
 #include "aabbox.h"
 #include "sphere.h"
 #include <array>
-#include "SubEntities.h"
+#include "SubEntity.h"
 #include "common.h"
 #include "quality.h"
 #include <iostream>
+#include "Vector3D.h"
+namespace MeshAC{
+class Node;
+class Triangle;
+class Tetrahedron;
+
 inline double SixTimesTetrahedronVolume(Vector3D v0, Vector3D v1, Vector3D v2, Vector3D v3){
     Vector3D a = v0 - v2;
     Vector3D b = v1 - v0;
@@ -22,6 +27,63 @@ inline double SixTimesTetrahedronVolume(Vector3D v0, Vector3D v1, Vector3D v2, V
     double rst = c[0]*(a[1]*b[2]-b[1]*a[2]) - c[1]*(a[0]*b[2]-b[0]*a[2]) + c[2]*(a[0]*b[1]-b[0]*a[1]);
     return rst;
 }
+
+    class Node
+    {
+    public:
+        Vector3D pos;
+        int index;
+        int label=0;
+        bool fixed = false;
+        double sizing;
+        std::vector<double> scalarValues;
+        std::vector<Vector3D> vectorValues;
+        int edit = 0;
+
+        void *tempDate = nullptr;
+        
+        Node(){
+
+        }
+
+        Node(double x, double y, double z):pos(x,y,z){
+        }
+
+        Node(double *xyz): pos(xyz){
+        }
+        Node(Vector3D &vec):pos(vec){
+        }
+
+    };
+
+
+
+    class Triangle{
+    public: 
+        std::array<Node *, 3> nodes;
+        AABBox boundingBox;
+        int index;
+        int label;
+        bool fixed = false;
+        int edit = 0;
+        std::array<Triangle *, 3> adjacentTriangles;
+        Triangle(){
+
+        }
+
+        Triangle(Node *n0, Node *n1, Node *n2){
+            nodes[0] = n0; nodes[1] = n1; nodes[2] = n2;
+        }
+
+        SubEdge getSubEdge(int iLocal){
+            SubEdge res(nodes[TriangleEdge[iLocal][0]], nodes[TriangleEdge[iLocal][1]]);
+            res.iLocal = iLocal;
+            res.triangle = this;
+            return res;
+        }
+
+
+    };
 
 class Tetrahedron 
 {   
@@ -313,4 +375,5 @@ public:
     }
 
 };
+}
 

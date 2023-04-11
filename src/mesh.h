@@ -5,61 +5,26 @@
 #include <set>
 #include <iostream>
 #include "aabbox.h"
-#include "vector3d.h"
+#include "Vector3D.h"
 // #include "RTree.h"
 #include "tetgen.h"
 #include "sphere.h"
-#include "edge.h"
-#include "SubEntities.h"
-#include "GroupEntities.h"
+#include "SubEntity.h"
+#include "GroupEntity.h"
 #include "common.h"
-#include "tetrahedron.h"
+#include "Element.h"
 #include "SpatialSearcher.h"
+#include "kdtree.h"
 
+namespace MeshAC{
 class Tetrahedron;
-class TriangleElement;
+class Triangle;
 struct TriangleFacet;
 class SurfaceMesh;
 
 
 
-class TriangleElement{
-public: 
-    std::array<Node *, 3> nodes;
-    AABBox boundingBox;
-    int index;
-    int label;
-    bool fixed = false;
-    int edit = 0;
-    std::array<std::vector<TriangleElement* >, 3> adjacentTriangles;
-    TriangleElement(){
 
-    }
-
-    TriangleElement(Node *n0, Node *n1, Node *n2){
-        nodes[0] = n0; nodes[1] = n1; nodes[2] = n2;
-    }
-
-    SubEdge getSubEdge(int iLocal){
-        SubEdge res(nodes[TriangleEdge[iLocal][0]], nodes[TriangleEdge[iLocal][1]]);
-        res.iLocal = iLocal;
-        res.triangle = this;
-        return res;
-    }
-
-    Edge edge(int index, bool withNodes=false){
-        int i0 = (index+1)%3;
-        int i1 = (index+2)%3;
-        Edge e(nodes[i0]->index, nodes[i1]->index);
-        if (withNodes){
-            e.sNodes[0]=nodes[i0];
-            e.sNodes[1]=nodes[i1];
-        }
-        e.tri = this;
-        e.localIndexOfTriangle = index;
-        return e;
-    }    
-};
 
 // struct TriangleFacet
 // {
@@ -256,3 +221,4 @@ void transportVector3dsToTETGENIO(const std::vector<Vector3D> &vec3ds, tetgenio 
 void transportNodesToTETGENIO(const std::vector<Node *> &sNodes, tetgenio &out);
 void transportFacetsToTETGENIO(std::vector<Node *> &sNodes, std::vector<SubTriangle> &facets, std::vector<Vector3D> &holes, tetgenio &out);
 void instructTetrahedronConnectByTETGENIO(std::vector<Node *> &nodes, tetgenio &in, std::vector<Tetrahedron *> &tets);
+}

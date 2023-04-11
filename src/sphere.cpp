@@ -1,4 +1,10 @@
 #include "sphere.h"
+
+namespace MeshAC{
+bool circumsphere(REAL* pa, REAL* pb, REAL* pc, REAL* pd, REAL* cent, REAL* radius);
+bool LU_decmp(REAL lu[4][4], int n, int* ps, REAL* d, int N);
+void LU_solve(REAL lu[4][4], int n, int* ps, REAL* b, int N);
+
 Sphere::Sphere(Vector3D &v0, Vector3D &v1, Vector3D &v2, Vector3D &v3){
     initialize(v0, v1, v2, v3);
 }
@@ -186,4 +192,5 @@ void LU_solve(REAL lu[4][4], int n, int* ps, REAL* b, int N)
     }
 
     for (i = N; i < n + N; i++) b[i] = X[i];
+}
 }
