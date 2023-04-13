@@ -24,22 +24,91 @@ You can install MeshAC with ...
 
 We now summarize the main components of the library. 
 
-1. 
+1. Mesh generation
 
-2. 
+2. Mesh adaptation
 
-3. 
+3. ...
 
 The following functionals are currently supported:
 - [`...`](...) ....
 
-### A/C coupling method in Julia
+From Mesher3DForSJTU package ...
 
-Atomistic-to-continuum coupling method in Julia. The multi-scale model is coupled by BGFC method.
+## A/C coupling method in Julia
 
-The atomistic model is based on the Julia package JuLIP.
+Atomistic-to-continuum coupling method in Julia. The current implementation is based on the [BGFC (Blended Ghost Force Correction)](https://epubs.siam.org/doi/10.1137/15M1020241) method.
+
+The atomistic computations involved are heavily depends on the pure Julia package [JuLIP](https://github.com/JuliaMolSim/JuLIP.jl) (Julia Library for Interatomic Potentials).
+
+Julia Packages involved: JuLIP, DelimitedFiles, Printf, NeighbourLists, QHull, Optim, LineSearches, SparseArrays, nsoli.
 
 Please do remember to modify the path of mesher3d in AtC constructor (AtC.jl).
+
+### FIO
+
+The module named `ACFIO` is used to cope with the geometrical operations.
+
+The functionals of FIO are to read/write:   
+
+- .mesh
+- .remesh   
+- .value   
+
+and write .dump files for visualization.
+
+Example:
+
+```julia
+...
+```
+
+### AtC
+
+Major struct contains geometrical and computational information.
+
+To construct an AtC objective invokes:   
+```
+function AtC(Ra::Int64, bw::Int64, Lmsh, h; Rbuf=2, sp=:W, r0=rnn(:W), defects=:SingVac, meshpath="YOUR PATH")
+```
+Note that `meshpath` is the path of mesher toolkit that may differ from each devices.
+
+Example:
+
+```julia
+...
+```
+
+### Adaptive
+
+Solve $\to$ Estimate $\to$ Mark $\to$ Refine
+
+1. Solve
+
+`BGFC/AtC` + `BGFC/Solve`: We use `minimise!` which is based on the implementation of `JuLIP.Solve` and `nsoli` as well.
+
+2. Estimate
+
+$\|\nabla u\|_{L^2(T)}$ for all $T\in\mathcal{T}$
+
+3. Mark
+
+- Tetrahedral elements' indices.   
+- Appending points' positions.
+
+4. Refine
+
+Call `mesher3d -r`
+
+This refinement functional requires \*.mesh, \*.remash, and \*.value files in the same path.
+
+- \*.mesh: original mesh files to be refined.
+- \*.remesh: consists of two fields labeled with
+	- Append\_points: vectors represent atomistic points to be appened adjacent to the interface.   
+	- Refine_elements: indices of elements to be refined.
+- \*.value: consists of two fileds labeled with (could be used individually)
+	- scalar density
+	- vector displacement
 
 Example:
 
