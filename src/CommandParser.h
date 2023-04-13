@@ -1,18 +1,27 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-10 08:40:35
- * @LastEditTime: 2023-04-10 09:26:49
+ * @LastEditTime: 2023-04-13 21:08:39
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/CommandParser.h
  */
 #pragma once
-
+#include <string>
 namespace MeshAC{
-struct CommandInfo{
+    enum FUNCTION_TYPE{
+        FT_GENERATION_FROM_POINTS=0,
+        FT_GENERATION_WITH_EDGE_DISLOCATION_POINTS,
+        FT_ADAPTIVE_REFINEMENT
+    };
+    struct CommandInfo{
+        FUNCTION_TYPE type = FT_GENERATION_FROM_POINTS;
+        std::string input;
+        std::string output;
+        double size=-1;
 
-};
+    };
 
-int CommandParser(int argc, char* argv[], CommandInfo &res);
+    int parseCommandLine(int argc, char* argv[], CommandInfo &res);
 
 }

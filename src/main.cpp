@@ -12,8 +12,24 @@
 #include <fstream>
 #include <ctime>
 #include <unordered_map>
+#include "CommandParser.h"
 using namespace MeshAC;
 int main(int argc, char *argv[]){
+	CommandInfo info;
+	parseCommandLine(argc, argv, info);
+	if(info.type == FT_GENERATION_FROM_POINTS){
+		delaunayTetrahedralizationWithHoles(info.input, info.output, info.size, true);
+	}
+	else if (info.type == FT_GENERATION_WITH_EDGE_DISLOCATION_POINTS){
+		generateZHandleMeshV2(info.input, info.output, info.size, true);
+	}
+	else if (info.type == FT_ADAPTIVE_REFINEMENT){
+		refineMeshV2(info.input, info.output, true);
+	}
+	return 0;
+}
+
+int main2(int argc, char *argv[]){
 
     tetgenio in, out;
 	Mesh goalMesh;
@@ -115,9 +131,9 @@ int main(int argc, char *argv[]){
 	//  choice = 3;
 	//  quiet = true;
 	// size = 5;
-	choice = 9;
-	fileIn = "/home/kjfu/research/Mesher3DForSJTU/examples/quality_test/CPC-disloc/step4.mesh";
-	fileOut = fileIn + ".csv";
+	// choice = 9;
+	// fileIn = "/home/kjfu/research/Mesher3DForSJTU/examples/quality_test/CPC-disloc/step4.mesh";
+	// fileOut = fileIn + ".csv";
 	// fileOut = "/home/kjfu/research/Mesher3DForSJTU/examples/paper_test/out3d.mesh";
 	// fileIn = "C:\\Users\\Fu Kejie\\Desktop\\workspace\\Mesher3DForSJTU\\examples\\periodic\\dislocation.mesh";
 	// refineFileHeadIn = "/home/kjfu/research/Mesher3DForSJTU/examples/refine_case/20210430/out3d";
