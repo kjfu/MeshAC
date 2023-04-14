@@ -52,46 +52,7 @@ void Mesh::rebuildTetrahedronsAdjacency(){
     }
 }
 
-// void Mesh::extractBorderNodeIndicesWithLabels(std::vector<int> labels, std::set<int> &nodeIndices){
-//     HashFacetTable table;
-//     auto satisfy=
-//     [&labels]
-//     (int label){
-//         bool rst=false;
-//         for(auto i: labels){
-//             if (label == i){
-//                 rst = true;
-//                 break;
-//             }
-//         }
-//         return rst;
-//     };
 
-//     for(auto &e: tetrahedrons){
-//         if ( satisfy(e->nodes[0]->label) 
-//         && satisfy(e->nodes[1]->label)
-//         && satisfy(e->nodes[2]->label)
-//         && satisfy(e->nodes[3]->label)){
-//             for(int i=0; i<4; i++){
-//                 TriangleFacet keyTri = e->facet(i);
-//                 TriangleFacet goalTri;
-//                 if (table.search(keyTri, goalTri)){
-//                     table.remove(goalTri);    
-//                 }
-//                 else{
-//                     table.insert(keyTri);
-//                 }    
-//             }
-//         }
-//     }
-//     for(auto kv: table.columns){
-//         for(auto f: kv.second){
-//             for(auto i: f.orderedNodeIndices){
-//                 nodeIndices.insert(i);
-//             }
-//         }
-//     }
-// }
 
 void Mesh::extractBorderNodes(std::vector<Node *> &sNodes){
     rebuildTetrahedronsAdjacency();
@@ -196,7 +157,7 @@ void Mesh::extractBorder(std::vector<Node *> &sNodes, std::vector<SubTriangle> &
     sNodes.insert(sNodes.end(), nodeSet.begin(), nodeSet.end());
 }
 
-void Mesh::deleteLargeScaleTetrahedronsPermanently(std::vector<Tetrahedron *> &delElements){
+void Mesh::deleteTetrahedrons(std::vector<Tetrahedron *> &delElements){
 
     for(auto e: tetrahedrons){
         e->edit = 0;
@@ -218,7 +179,8 @@ void Mesh::deleteLargeScaleTetrahedronsPermanently(std::vector<Tetrahedron *> &d
     for(int i=0; i<tetrahedrons.size(); i++){
         if (tetrahedrons[i]->edit == -1){
             delete tetrahedrons[i];
-            tetrahedrons.erase(tetrahedrons.begin()+i);
+            tetrahedrons[i] = tetrahedrons.back();
+            tetrahedrons.pop_back();
             i--;
         }
         else{
@@ -231,7 +193,8 @@ void Mesh::deleteLargeScaleTetrahedronsPermanently(std::vector<Tetrahedron *> &d
     for(int i=0; i<nodes.size(); i++){
         if (nodes[i]->edit == -1){
             delete nodes[i];
-            nodes.erase(nodes.begin()+i);
+            nodes[i] = nodes.back();
+            nodes.pop_back();
             i--;
         }
     }
@@ -241,21 +204,7 @@ void Mesh::deleteLargeScaleTetrahedronsPermanently(std::vector<Tetrahedron *> &d
 }
 
 
-void Mesh::deleteSmallScaleTetrahedronsPermanently(std::vector<Tetrahedron *> &delElements){
-    for(auto e: delElements){
-        for(auto ee: e->adjacentTetrahedrons){
-            if (ee){
-                ee->removeAdjacentTetrahedron(e);
-            }
-        }
-        tetrahedrons.erase(std::find(tetrahedrons.begin(), tetrahedrons.end(), e));
-        
-    }
-    //TODO deleteSmallScaleTetrahedronsPermanently
 
-
-
-}
 
 void Mesh::rebuildAABBox(){
     aabbox.reset();
@@ -504,66 +453,20 @@ void Mesh::readyForSpatialSearch(bool toBuildTetKDTree, bool toBuildNodeKDTree, 
 
 }
 
-// bool Mesh::searchTetrahedronIntersect(Tetrahedron *keyTet, Tetrahedron* &goalTet){
-//     bool rst = false;
-//     Vector3D pos = keyTet->center().data();
-//     kdres *set = kd_nearest_range(tetKDTree, pos.data(), maxSizing);
-//     while (!kd_res_end(set)){
-//         Tetrahedron *tet = static_cast<Tetrahedron *>(kd_res_item_data(set));
-//         if (tet->boundingBox.intersects(keyTet->boundingBox, 1e-10)){
-//             goalTet = tet;
-//             rst = true;
-//             break;
-//         }
-//         kd_res_next(set);
-//     }
-//     kd_res_free(set);
-//     return rst;
-// }
 
-bool Mesh::searchTetrahedronContain(Vector3D pos, Tetrahedron* &goalTet){
-    SearchTetrahedronResult res;
-    aSearcher.searchTetrahedronContain(pos, res);
-    if (res.positionType != POSITION_TYPE::OUTSIDE){
-        goalTet=res.tet;
-        return true;
+    bool Mesh::checkTetrahedronIntersection(Tetrahedron *tet){
+        return aSearcher.checkTetrahedronIntersection(tet);
     }
+    bool Mesh::searchTetrahedronContain(Vector3D pos, Tetrahedron* &goalTet){
+        SearchTetrahedronResult res;
+        aSearcher.searchTetrahedronContain(pos, res);
+        if (res.positionType != POSITION_TYPE::OUTSIDE){
+            goalTet=res.tet;
+            return true;
+        }
 
-    return false;
-    // bool rst = false;
-    // kdres *set = kd_nearest_range(tetKDTree, pos.data(), maxSizing);
-    // while (!kd_res_end(set)){
-    //     Tetrahedron *tet = static_cast<Tetrahedron *>(kd_res_item_data(set));
-    //     if (tet->boundingBox.contain(pos, 1e-10) && tet->contain(pos, 1e-10)){
-    //         goalTet = tet;
-    //         rst = true;
-    //         break;
-    //     }
-    //     kd_res_next(set);
-    // }
-    // kd_res_free(set);
-    // return rst;
-
-    // bool findGoal = false;
-    // auto rtreeCallBack =
-    // [&goalTet, &pos, &findGoal]
-    // (Tetrahedron* const &tet)
-    // {
-    //     bool rst = true;
-
-    //     if (tet->contain(pos)){
-    //         goalTet = tet;
-    //         findGoal = true;
-    //         rst = false;
-    //     }
-    //     return rst;
-    // };
-
-    // Vector3D max = pos + maxSizing;
-    // Vector3D min = pos - maxSizing;
-    // tetRTree.Search(min.data(), max.data(), rtreeCallBack);
-    // return findGoal;
-}
+        return false;
+    }
 
 bool Mesh::searchTetrahedronContain(Vector3D pos,  Tetrahedron* &goalTet, std::array<double, 4> &weights){
     SearchTetrahedronResult res;
@@ -575,39 +478,7 @@ bool Mesh::searchTetrahedronContain(Vector3D pos,  Tetrahedron* &goalTet, std::a
     }
 
     return false;
-    // bool rst = false;
-    // kdres *set = kd_nearest_range(tetKDTree, pos.data(), maxSizing);
-    // while (!kd_res_end(set)){
-    //     Tetrahedron *tet = static_cast<Tetrahedron *>(kd_res_item_data(set));
-    //     if (tet->boundingBox.contain(pos) && tet->contain(pos, weights)){
-    //         goalTet = tet;
-    //         rst = true;
-    //         break;
-    //     }
-    //     kd_res_next(set);
-    // }
-    // kd_res_free(set);
-    // return rst;  
 
-    // bool findGoal = false;
-    // auto rtreeCallBack =
-    // [&goalTet, &pos, &findGoal, &weights]
-    // (Tetrahedron* const &tet)
-    // {
-    //     bool rst = true;
-
-    //     if (tet->contain(pos, weights)){
-    //         goalTet = tet;
-    //         findGoal = true;
-    //         rst = false;
-    //     }
-    //     return rst;
-    // };
-
-    // Vector3D max = pos + maxSizing;
-    // Vector3D min = pos - maxSizing;
-    // tetRTree.Search(min.data(), max.data(), rtreeCallBack);
-    // return findGoal;    
 }
 
 void Mesh::clone(const Mesh &aMesh){
@@ -686,9 +557,12 @@ void Mesh::checkBooleanRemoveSpecial(Mesh &anotherMesh, int outerLayers){
         }
         bool maybeIntersect=false;
         for(auto n: e->nodes){
-            if (n->edit){
+            if (n->edit==1){
                 e->edit =-1;
                 break;
+            }
+            else if(n->edit==-1){
+                continue;
             }
             
             if(anotherBox.contain(n->pos, 1e-10)){
@@ -700,6 +574,9 @@ void Mesh::checkBooleanRemoveSpecial(Mesh &anotherMesh, int outerLayers){
                 else{
                     maybeIntersect = true;
                 }
+            }
+            else{
+                n->edit = -1;
             }
             if(e->edit==-1) break;
         }
@@ -1059,7 +936,7 @@ void Mesh::CavityBasedInsertNode(Tetrahedron *tet, Node *insertNode){
         tetrahedrons.push_back(insertTet);
     }
     
-    deleteLargeScaleTetrahedronsPermanently(rmTets);
+    deleteTetrahedrons(rmTets);
     rebuildTetrahedronsAdjacency();
 }
 

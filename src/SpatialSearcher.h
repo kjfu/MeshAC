@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2022-01-21 01:40:25
- * @LastEditTime: 2023-04-10 09:51:08
+ * @LastEditTime: 2023-04-14 23:09:26
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/SpatialSearcher.h
@@ -44,6 +44,9 @@ public:
     SpatialSearcher(Mesh *m): mesh(m), aTree(3,0){ buildAABBTree();}
     void buildAABBTree();
     void searchTetrahedronContain(Vector3D position, SearchTetrahedronResult &result);
+    
+    bool checkTetrahedronIntersection(Tetrahedron *tet);
+
     void removeTetrahedron(Tetrahedron *pTet);
     void insertTetrahedron(Tetrahedron *pTet);
     void updateTetrahedron(Tetrahedron *pTet);

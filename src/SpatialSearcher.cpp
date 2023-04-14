@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2022-01-21 17:11:50
- * @LastEditTime: 2023-04-10 08:53:40
+ * @LastEditTime: 2023-04-14 23:20:07
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/SpatialSearcher.cpp
@@ -30,6 +30,28 @@ unsigned int SpatialSearcher::getId(){
     return rst;
 }
 
+bool SpatialSearcher::checkTetrahedronIntersection(Tetrahedron *tet){
+    std::vector<double> lowerBound;
+    std::vector<double> upperBound;
+    tet->getBoundingBox(lowerBound, upperBound);
+    aTree.insertParticle(std::numeric_limits<unsigned int>::max(), lowerBound, upperBound);
+    std::vector<unsigned int> ids = aTree.query(std::numeric_limits<unsigned int>::max());
+    aTree.removeParticle(std::numeric_limits<unsigned int>::max());
+    for(auto id: ids){
+        Tetrahedron *another = ID2TET[id];
+        for(int i=0; i<4; i++){
+            SubTriangle f=tet->getSubTriangle(i);
+            for(int j=0; j<4; j++){
+                SubTriangle ff=another->getSubTriangle(j);
+                if (testIntersection(f, ff)){
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
 void SpatialSearcher:: searchTetrahedronContain(Vector3D position, SearchTetrahedronResult &result){
     std::vector<double> pos = position.toSTDVector();
     aTree.insertParticle(std::numeric_limits<unsigned int>::max(), pos, 0);

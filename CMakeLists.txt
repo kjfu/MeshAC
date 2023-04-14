@@ -26,6 +26,7 @@ set(MESHAC_SRCS
     ./src/TetgenTool.cpp
     ./src/TriangleTool.cpp
     ./src/Core.cpp
+    ./src/CoreIO.cpp
 )
 
 #tetgen

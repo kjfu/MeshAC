@@ -1,3 +1,11 @@
+/*
+ * @Author: Kejie Fu
+ * @Date: 2023-04-13 23:16:47
+ * @LastEditTime: 2023-04-14 23:52:12
+ * @LastEditors: Kejie Fu
+ * @Description: 
+ * @FilePath: /MeshAC/src/Core.h
+ */
 #pragma once
 #include <string>
 #include "mesh.h"
@@ -16,6 +24,27 @@ namespace MeshAC{
         double size
     );
 
+
+    void adaptiveRefineMesh(
+        const std::string &input,
+        const std::string &output
+    );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void generateMeshForAtomisticRegion(
         const std::vector<Vector3D> &points,
         Mesh &resultingMesh,
@@ -25,6 +54,12 @@ namespace MeshAC{
     void generateMeshForContinuumRegion(
         SurfaceMesh &boundingBoxSurfaceMesh,
         SurfaceMesh &interfaceSurfaceMesh,
+        Mesh &resultingMesh
+    );
+
+    void generateMeshForBlendRegion(
+        SurfaceMesh &outerInterfaceSurfaceMesh,
+        SurfaceMesh &innerInterfaceSurfaceMesh,
         Mesh &resultingMesh
     );
 
@@ -56,7 +91,16 @@ namespace MeshAC{
         SurfaceMesh &resultingSurfaceMesh
     );
 
-
-
+    void removeIntersectionElements(
+        Mesh &originalMesh,
+        Mesh &expandedAtomisticMesh,
+        SurfaceMesh &interfaceSurfaceMesh,
+        int outerLayers=0
+    );
+    
+    void extractBorderingSurfaceMesh(
+        std::vector<Tetrahedron *>&tets, 
+        SurfaceMesh &aSurface
+    );
 
 }

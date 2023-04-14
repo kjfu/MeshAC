@@ -1,16 +1,21 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:56
- * @LastEditTime: 2023-04-14 16:52:39
+ * @LastEditTime: 2023-04-14 23:59:18
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.cpp
  */
 #include "Core.h"
+#include "CoreIO.h"
 #include "PointSet.h"
 #include "TetgenTool.h"
 #include "TriangleTool.h"
+#include "MeshRefiner.h"
 #include "common.h"
+#include "aabbox.h"
+#include <unordered_set>
+#include <unordered_map>
 namespace MeshAC{
     void generateMeshFromPoints(
         const std::string &input, 
@@ -24,7 +29,7 @@ namespace MeshAC{
         //Step 1: Generate sub-mesh for atomistic region
         Mesh atomisticMesh;
         SurfaceMesh interfaceSurfaceMesh;
-        generateMeshForAtomisticRegion(aPointSet.subsets[ATOMISTIC_POINT], atomisticMesh,interfaceSurfaceMesh);
+        generateMeshForAtomisticRegion(aPointSet.subsets[ATOMISTIC_POINT], atomisticMesh, interfaceSurfaceMesh);
 
         //Step 2: Generate sub-mesh for continuum region
         Mesh continuumMesh;
@@ -88,6 +93,57 @@ namespace MeshAC{
         atomisticMesh.exportMESH(output);
         atomisticMesh.exportVTK(output+".vtk");
     }
+
+    void adaptiveRefineMesh(
+        const std::string &input,
+        const std::string &output
+    ){
+        //Input
+        Mesh backgroundMesh;
+        Mesh goalMesh;
+        backgroundMesh.loadMESH(input + ".mesh");
+	    backgroundMesh.loadNodeValues(input + ".value");
+        
+        goalMesh.loadMESH(input + ".mesh");
+        std::vector<int> refine_elements;
+        std::vector<Vector3D> append_points;
+	    loadREMESH(refine_elements, append_points, input+".remesh");
+
+        //Step 1:
+        MeshRefiner aRefiner(&goalMesh);
+        aRefiner.refine(1, refine_elements, 1, 3);
+        
+        //Step 2:
+        std::vector<Vector3D> points;
+        for(auto &n: goalMesh.nodes){
+            if(n->label==2 || n->label==0){
+                points.emplace_back(n->pos);
+            }
+        }
+        for(auto &p: append_points){
+            points.emplace_back(p[0], p[1], p[2]);
+        }
+
+        Mesh atomisticMesh;
+        SurfaceMesh innerInterfaceSurfaceMesh;
+        SurfaceMesh outerInterfaceSurfaceMesh;
+        generateMeshForAtomisticRegion(points, atomisticMesh, innerInterfaceSurfaceMesh);
+
+        removeIntersectionElements(goalMesh, atomisticMesh, outerInterfaceSurfaceMesh);
+
+        Mesh blendMesh;
+        generateMeshForBlendRegion(outerInterfaceSurfaceMesh, innerInterfaceSurfaceMesh, blendMesh);
+        
+
+        //Output
+        atomisticMesh.mergeMesh(blendMesh, 1e-10);
+        goalMesh.mergeMesh(blendMesh, 1e-10);
+        backgroundMesh.interpolateNodeValuesForAnotherMesh(goalMesh);
+        goalMesh.exportNodeValues(output + ".value");
+        goalMesh.exportMESH(output + ".mesh");
+        goalMesh.exportVTK(output+".vtk");
+    }
+
 
     void generateMeshForAtomisticRegion(
         const std::vector<Vector3D> &points,
@@ -215,6 +271,39 @@ namespace MeshAC{
         for(auto &tet: resultingMesh.tetrahedrons){
             tet->label=1;
         }
+    }
+
+    void generateMeshForBlendRegion(
+        SurfaceMesh &outerInterfaceSurfaceMesh,
+        SurfaceMesh &innerInterfaceSurfaceMesh,
+        Mesh &resultingMesh
+    ){
+        int numNodesOfInner = innerInterfaceSurfaceMesh.nodes.size();
+        int numNodesOfOuter = outerInterfaceSurfaceMesh.nodes.size();
+
+        std::vector<Vector3D> holeCenters;
+
+        innerInterfaceSurfaceMesh.getSubRegionCenters(holeCenters);
+
+        innerInterfaceSurfaceMesh.addSubSurfaceMesh(outerInterfaceSurfaceMesh);
+
+        tetgenio in;
+        tetgenio out;
+        transportSurfaceMeshToTETGENIO(innerInterfaceSurfaceMesh, holeCenters, in);
+        char cmd[] = "pq1.1/10YQ";
+	    tetrahedralize(cmd, &in, &out);
+
+        transportTETGENIOToMesh(out, resultingMesh);
+        for(int i=0; i<numNodesOfInner; i++){
+            resultingMesh.nodes[i]->label = 2;
+        }
+
+        for( int i=numNodesOfInner; i<resultingMesh.nodes.size(); i++){
+            resultingMesh.nodes[i]->label = 3;
+        }
+        for(auto &tet: resultingMesh.tetrahedrons){
+            tet->label=1;
+        }        
     }
 
     void generateBoundingBoxSurfaceMesh(
@@ -447,4 +536,159 @@ namespace MeshAC{
         resultingSurfaceMesh.mergeSurfaceMesh(faceBottom, 1e-8);
     }
 
+    void removeIntersectionElements(
+        Mesh &originalMesh,
+        Mesh &expandedAtomisticMesh,
+        SurfaceMesh &interfaceSurfaceMesh,
+        int outerLayers
+    ){
+        expandedAtomisticMesh.readyForSpatialSearch();
+
+        AABBox anotherBox;
+        for(auto n: expandedAtomisticMesh.nodes){
+            anotherBox.insert(n->pos);
+        }
+        for(auto n: originalMesh.nodes){
+            n->edit = 0;
+        }
+
+        for(auto e: originalMesh.tetrahedrons){
+            e->edit = 0;
+            if (e->label==ATOMISTIC_TET){
+                e->edit = 1;
+                continue;
+            }
+            bool maybeIntersect=false;
+            for(auto n: e->nodes){
+                if (n->edit==1){
+                    e->edit = 1;
+                    break;
+                }
+                else if(n->edit==-1){
+                    continue;
+                }
+
+                if (anotherBox.contain(n->pos, 1e-10)){
+                    Tetrahedron *goalTet;
+                    if (expandedAtomisticMesh.searchTetrahedronContain(n->pos, goalTet)){
+                        e->edit = 1;
+                        n->edit = 1;
+                    }
+                    else{
+                        maybeIntersect = true;
+                    }
+                }
+                else{
+                    n->edit = -1;
+                }
+                if(e->edit==1) break;
+            }
+
+            if(maybeIntersect && e->edit == 0){
+                expandedAtomisticMesh.checkTetrahedronIntersection(e);
+                e->edit = 1;
+            }
+        }
+
+        std::vector<Tetrahedron *> delTets;
+        for(auto e: originalMesh.tetrahedrons){
+            if(e->edit==1){
+                delTets.push_back(e);
+            }
+        }
+
+        if (outerLayers>0){
+            std::vector<Tetrahedron *> removeTets;
+            for(auto n: originalMesh.nodes){
+                n->edit = 0;
+            }
+
+            for(auto e: originalMesh.tetrahedrons){
+                if(e->edit==1){
+                    removeTets.push_back(e);
+                }
+            }
+            for(auto e: removeTets){
+                for(auto n: e->nodes){
+                    n->edit = 1;
+                }
+            }
+
+
+            for(int i=0; i<outerLayers; i++){
+                std::vector<Tetrahedron *> freshTets;
+                for(auto e: originalMesh.tetrahedrons){
+                    if (e->edit == 0){
+                        for(auto n: e->nodes){
+                            if (n->edit == 1){
+                                e->edit = 1;
+                                freshTets.push_back(e);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                for(auto e: freshTets){
+                    for(auto n: e->nodes){
+                        n->edit = 1;
+                    }
+                }
+
+                if(freshTets.empty()){
+                    break;
+                }
+            }
+        }
+
+        extractBorderingSurfaceMesh(delTets, interfaceSurfaceMesh);
+        originalMesh.deleteTetrahedrons(delTets);
+
+    }
+
+
+    void extractBorderingSurfaceMesh(
+        std::vector<Tetrahedron *>&tets, 
+        SurfaceMesh &aSurface
+    ){
+        std::set<Node *> nodeSet; 
+        std::unordered_set<SubTriangle, SubTriangleHasher, SubTriangleEqual> subTriangleSet;
+        for(auto e: tets){
+            for(int i=0; i<4; i++){
+                SubTriangle keyFacet = e->getSubTriangle(i);
+                if (subTriangleSet.count(keyFacet)){
+                    subTriangleSet.erase(keyFacet);
+                }
+                else{
+                    subTriangleSet.insert(keyFacet);
+                }
+            }
+        }
+        std::unordered_map<Node*, Node*> oldNewNodes;
+        auto getNode
+        =
+        [&oldNewNodes]
+        (Node* key){
+            Node *rst;
+            if(oldNewNodes.find(key)!=oldNewNodes.end()){
+                rst = oldNewNodes[key];
+            }
+            else{
+                rst = new Node(key->pos);
+                rst->label= key->label;
+                oldNewNodes[key] = rst;
+            }
+            return rst;
+        };
+
+        for(auto f: subTriangleSet){
+            aSurface.addTriangle(getNode(f.forms[0]), getNode(f.forms[1]), getNode(f.forms[2]));
+            
+        }
+        for(auto kv: oldNewNodes){
+            aSurface.nodes.push_back(kv.second);
+        }
+
+        aSurface.rebuildIndices();
+    }
 }

@@ -817,7 +817,7 @@ void refineMeshV2(const std::string &fileInHead, const std::string &fileOutHead,
 	MeshRefiner aRefiner(&goalMesh);
 	timebegin = clock_t();
 	//goalMesh.CavityBasedInsert(positions);
-	aRefiner.refine(1,refine_elements, 1, 3);
+	aRefiner.refine(1, refine_elements, 1, 3);
 	timeend = clock_t();
 	std::cout << "[*************] Insert time: "<< (timeend - timebegin)/ CLOCKS_PER_SEC << "s" <<std::endl;
 	// goalMesh.exportVTK(fileOutHead + ".1.vtk");
@@ -1071,7 +1071,7 @@ void refineMesh(const std::string &fileInHead, const std::string &fileOutHead, b
 		extratctBorder(rmTets, grad_nodes, grad_facets);
 
 
-		goalMesh.deleteLargeScaleTetrahedronsPermanently(rmTets);
+		goalMesh.deleteTetrahedrons(rmTets);
 
 		std::vector<Vector3D> holes;
 		holes.emplace_back(0,0,0);

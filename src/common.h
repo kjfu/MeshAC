@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2022-03-26 22:06:24
- * @LastEditTime: 2023-04-14 00:14:50
+ * @LastEditTime: 2023-04-14 22:26:11
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/common.h
@@ -15,9 +15,11 @@ enum POINT_LABEL{
 	CONTINUUM_OUT_BORDER_POINT,
 };
 
-enum ELEMENT_LABEL{
-
+enum TETRAHEDRON_LABEL{
+	ATOMISTIC_TET=0,
+	CONTINUUM_TET
 };
+
 // VTK Element types
 enum VTK_ELEMENT_TYPE {	
 	IGNORED = 0,
