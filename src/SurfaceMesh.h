@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-06 01:09:29
- * @LastEditTime: 2023-04-11 14:20:11
+ * @LastEditTime: 2023-04-14 14:15:58
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/SurfaceMesh.h
@@ -37,6 +37,11 @@ public:
         }     
     }
 
+    Triangle * addTriangle(Node* n0, Node* n1, Node *n2){
+        Triangle *tri = new Triangle(n0,n1,n2);
+        triangles.push_back(tri);
+        return tri;
+    }
 
     void cloneSurfaceMesh(SurfaceMesh &another);
 
@@ -50,6 +55,7 @@ public:
 
     void deleteTriangles(std::vector<Triangle *> &toDelTriangles);
 
+    void getSubRegionCenters(std::vector<Vector3D> &positions);
     
     void projectTRIANGULATEIO(triangulateio &in, PROJECTION_TYPE projectionType, double offset);
 

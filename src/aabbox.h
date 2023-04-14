@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-06 01:08:36
- * @LastEditTime: 2023-04-10 09:51:44
+ * @LastEditTime: 2023-04-14 14:48:01
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/aabbox.h
@@ -9,7 +9,7 @@
 #pragma once
 #include <array>
 #include "Vector3D.h"
-
+#include <limits>
 namespace MeshAC{
 class AABBox
 {

@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-28 01:53:43
- * @LastEditTime: 2023-04-11 14:56:29
+ * @LastEditTime: 2023-04-14 14:15:25
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Element.h
@@ -51,7 +51,7 @@ inline double SixTimesTetrahedronVolume(Vector3D v0, Vector3D v1, Vector3D v2, V
 
         Node(double *xyz): pos(xyz){
         }
-        Node(Vector3D &vec):pos(vec){
+        Node(const Vector3D &vec):pos(vec){
         }
 
     };
@@ -80,6 +80,10 @@ inline double SixTimesTetrahedronVolume(Vector3D v0, Vector3D v1, Vector3D v2, V
             res.iLocal = iLocal;
             res.triangle = this;
             return res;
+        }
+
+        Vector3D center(){
+            return 1.0/3.0*(nodes[0]->pos + nodes[1]->pos + nodes[2]->pos);
         }
 
 

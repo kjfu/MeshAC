@@ -37,8 +37,6 @@ void Mesh::rebuildTetrahedronsAdjacency(){
         for(int i=0; i<4; i++){
             if(e->adjacentTetrahedrons[i] == nullptr){
                 SubTriangle sub = e->getSubTriangle(i);
-                // TriangleFacet keyTri = e->facet(i);
-                // TriangleFacet goalTri;
                 if (SubTriangleMap.count(sub)){
                     SubTriangle goalTri = SubTriangleMap[sub];
                     Tetrahedron *goalTet = goalTri.tetrahedron;
@@ -48,7 +46,6 @@ void Mesh::rebuildTetrahedronsAdjacency(){
                 }
                 else{
                     SubTriangleMap[sub]=sub;
-                    // table.insert(keyTri);
                 }
             }
         }
@@ -160,8 +157,9 @@ void Mesh::extractBorder(SurfaceMesh &aSurface){
 
     for(auto f:subTriangleSet){
         // for(auto f: kv.second){
-        Triangle *tri = new Triangle(getNode(f.forms[0]), getNode(f.forms[1]), getNode(f.forms[2]));
-        aSurface.triangles.push_back(tri);
+            aSurface.addTriangle(getNode(f.forms[0]), getNode(f.forms[1]), getNode(f.forms[2]));
+        // TriangleElement *tri = new TriangleElement();
+        // aSurface.triangles.push_back(tri);
         // }
     }
 	for(auto kv: oldNewNodes){
@@ -1160,17 +1158,17 @@ void transportVector3dsToTETGENIO(const std::vector<Vector3D> &vec3ds, tetgenio 
 
 
 
-void transportNodesToTETGENIO(const std::vector<Node *> &sNodes, tetgenio &out){
-    out.numberofpoints = sNodes.size();
-    out.pointlist = new double[out.numberofpoints*3];
-    out.pointmarkerlist = new int[out.numberofpoints];
-    for(int i=0; i<out.numberofpoints; i++){
-        for(int j=0; j<3; j++){
-            out.pointlist[3*i+j] = sNodes[i]->pos[j]; 
-        }
-        out.pointmarkerlist[i] = sNodes[i]->label;
-    }
-}
+// void transportNodesToTETGENIO(const std::vector<Node *> &sNodes, tetgenio &out){
+//     out.numberofpoints = sNodes.size();
+//     out.pointlist = new double[out.numberofpoints*3];
+//     out.pointmarkerlist = new int[out.numberofpoints];
+//     for(int i=0; i<out.numberofpoints; i++){
+//         for(int j=0; j<3; j++){
+//             out.pointlist[3*i+j] = sNodes[i]->pos[j]; 
+//         }
+//         out.pointmarkerlist[i] = sNodes[i]->label;
+//     }
+// }
 
 void transportFacetsToTETGENIO(std::vector<Node *> &sNodes, std::vector<SubTriangle> &facets, std::vector<Vector3D> &holes, tetgenio &out){
     

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+#include <queue>
 #include <vector>
 #include "kdtree.h"
 namespace MeshAC{
@@ -116,7 +117,33 @@ void SurfaceMesh::loadMESH(const std::string &filePath){
     }
 }
 
-
+    void SurfaceMesh::getSubRegionCenters(std::vector<Vector3D> &positions){
+        for(auto tri: triangles){
+            tri->edit=0;
+        }
+        rebuildTriangleAdjacency();
+        for(auto tri: triangles){
+            if (tri->edit) continue;
+            Vector3D vec(0, 0, 0);
+            double div=0;
+            std::queue<Triangle*> tris;
+            tris.push(tri);
+            while(!tris.empty()){
+                Triangle *tmp= tris.front();
+                tris.pop();
+                if (tmp->edit) continue;
+                tmp->edit=1;
+                div++;
+                vec+=tmp->center();
+                for(auto adj: tmp->adjacentTriangles){
+                    if (adj &&adj->edit==0){
+                        tris.push(adj);
+                    }
+                }
+            }
+            positions.push_back(vec/div);
+        }
+    }
 
 void SurfaceMesh::rebuildTriangleAdjacency(){
     std::unordered_map<SubEdge, SubEdge, SubEdgeHasher, SubEdgeEqual> edgeMap;
@@ -141,54 +168,7 @@ void SurfaceMesh::rebuildTriangleAdjacency(){
 }
 
 
-// void SurfaceMesh::deleteTriangles(std::vector<Triangle*> delTriangles){
-//     for(auto t: triangles){
-//         t->edit = 0;
-//         for(auto n:t->nodes){
-//             n->edit = 0;
-//         }
-//     }
 
-//     for(auto t: delTriangles){
-//         t->edit=-1;
-//         for(auto n: t->nodes){
-//             n->edit = -1;
-//         }
-//     }
-//     for(auto t:triangles){
-//         if(t->edit==0){
-//             for(int i=0; i<3; i++){
-//                 for(int j=0; j<t->adjacentTriangles[i].size(); j++){
-//                     if(t->adjacentTriangles[i][j]->edit==-1){
-//                         t->adjacentTriangles[i].erase(t->adjacentTriangles[i].begin()+j);
-//                         j--;
-//                     }
-//                 }
-//             }
-//             for(auto n:t->nodes){
-//                 n->edit = 0;
-//             }
-//         }
-//     }
-
-//     for(int i=0; i<nodes.size(); i++){
-//         if(nodes[i]->edit==-1){
-//             delete nodes[i];
-//             nodes.erase(nodes.begin()+i);
-//             i--;
-//         }
-//     }
-
-//     for(int i=0; i<triangles.size(); i++){
-//         if(triangles[i]->edit==-1){
-//             delete triangles[i];
-//             triangles.erase(triangles.begin()+i);
-//             i--;
-//         }
-//     }
-
-//     rebuildIndices();
-// }
 
 
 
@@ -624,7 +604,7 @@ void SurfaceMesh::loadTETGENIO(tetgenio &in){
     rebuildIndices();
 }
 
-
+//TODO: rewrite!!!
 void SurfaceMesh::estimateSizing(){
     maxSizing = std::numeric_limits<double>::min();
     minSizing = std::numeric_limits<double>::max();

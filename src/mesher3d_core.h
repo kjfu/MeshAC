@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2021-09-07 21:09:25
- * @LastEditTime: 2023-04-11 14:46:21
+ * @LastEditTime: 2023-04-14 16:54:00
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/mesher3d_core.h
@@ -44,8 +44,8 @@ void generatePeriodicBoundaryConditionMesh(const std::string &fileIn, const std:
 
 
 
-void setNullToTRIANGULATEIO(triangulateio &io);
-void deleteTRIANGULATEIOAllocatedArrays(triangulateio &io);
+// void setNullToTRIANGULATEIO(triangulateio &io);
+// void deleteTRIANGULATEIOAllocatedArrays(triangulateio &io);
 void generateRectangle(std::array<double, 2> maxPos, std::array<double,2> minPos, double size, std::vector<std::array<double,2>> &edgeNodes, std::vector<std::array<int, 2>> &edges);
 void generateMeshInPlaneWithEdges(std::vector<std::array<double,2>> &planeNodes, std::vector<std::array<int, 2>> &edges, std::vector<std::array<double,2>> holes, double maxAreaSize, triangulateio &triOut);
 

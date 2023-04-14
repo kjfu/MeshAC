@@ -175,6 +175,11 @@ public:
         }
     }
 
+    void initialize(double x, double y, double z){
+        xyz[0] = x;
+        xyz[1] = y;
+        xyz[2] = z;
+    }
     std::vector<double> toSTDVector(){
         std::vector<double> rst(3);
         rst[0] = xyz[0];

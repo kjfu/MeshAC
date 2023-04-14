@@ -13,15 +13,16 @@
 #include <ctime>
 #include <unordered_map>
 #include "CommandParser.h"
+#include "Core.h"
 using namespace MeshAC;
 int main(int argc, char *argv[]){
 	CommandInfo info;
 	parseCommandLine(argc, argv, info);
 	if(info.type == FT_GENERATION_FROM_POINTS){
-		delaunayTetrahedralizationWithHoles(info.input, info.output, info.size, true);
+		generateMeshFromPoints(info.input, info.output, info.size);
 	}
-	else if (info.type == FT_GENERATION_WITH_EDGE_DISLOCATION_POINTS){
-		generateZHandleMeshV2(info.input, info.output, info.size, true);
+	else if (info.type == FT_GENERATION_FROM_EDGE_DISLOCATION_POINTS){
+		generateMeshFromEdgeDislocationPoints(info.input, info.output, info.size);
 	}
 	else if (info.type == FT_ADAPTIVE_REFINEMENT){
 		refineMeshV2(info.input, info.output, true);

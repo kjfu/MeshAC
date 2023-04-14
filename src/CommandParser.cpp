@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-10 08:43:17
- * @LastEditTime: 2023-04-13 21:12:25
+ * @LastEditTime: 2023-04-14 15:36:53
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/CommandParser.cpp
@@ -20,7 +20,7 @@ namespace MeshAC{
                 res.type = FT_ADAPTIVE_REFINEMENT;
             }
             else if (str=="-hd"){
-                res.type = FT_GENERATION_WITH_EDGE_DISLOCATION_POINTS;
+                res.type = FT_GENERATION_FROM_EDGE_DISLOCATION_POINTS;
             }
             else if (str=="-i"){
                 i++;

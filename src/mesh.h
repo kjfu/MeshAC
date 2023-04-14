@@ -83,8 +83,20 @@ public:
     }
 
 
-    Node* addNode(Vector3D vec){
+    Node* addNode(const Vector3D &vec){
         Node* n = new Node(vec);
+        nodes.push_back(n);
+        return n;
+    }
+
+    Node* addNode(double vec[3]){
+        Node* n = new Node(vec);
+        nodes.push_back(n);
+        return n;
+    }
+
+    Node *addNode(double x, double y, double z){
+        Node* n = new Node(x, y, z);
         nodes.push_back(n);
         return n;
     }
@@ -95,6 +107,11 @@ public:
         return tet;
     }
 
+    Tetrahedron* addTetrahedron(Node* nodes[4]){
+        Tetrahedron *tet = new Tetrahedron(nodes[0], nodes[1], nodes[2], nodes[3]);
+        tetrahedrons.push_back(tet);
+        return tet;
+    }
     // VolumeBall getVolumeBall(Tetrahedron *tet, int iLocal){
     //     VolumeBall aBall;
     //     Node *keyNode = tet->nodes[iLocal];
@@ -218,7 +235,7 @@ void extractBorderNodes(std::vector<Tetrahedron *> &tets, std::vector<Node *> &b
 void extractBorderFacets(std::vector<Tetrahedron *> &tets, std::vector<SubTriangle> &borderFacets);
 void extratctBorder(std::vector<Tetrahedron *> &tets, std::vector<Node *> &borderNodes, std::vector<SubTriangle> &borderFacets);
 void transportVector3dsToTETGENIO(const std::vector<Vector3D> &vec3ds, tetgenio &out);
-void transportNodesToTETGENIO(const std::vector<Node *> &sNodes, tetgenio &out);
+// void transportNodesToTETGENIO(const std::vector<Node *> &sNodes, tetgenio &out);
 void transportFacetsToTETGENIO(std::vector<Node *> &sNodes, std::vector<SubTriangle> &facets, std::vector<Vector3D> &holes, tetgenio &out);
 void instructTetrahedronConnectByTETGENIO(std::vector<Node *> &nodes, tetgenio &in, std::vector<Tetrahedron *> &tets);
 }

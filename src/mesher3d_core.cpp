@@ -12,7 +12,8 @@
 #include "MeshRefiner.h"
 #include <unordered_set>
 #include <fstream>
-
+#include "TetgenTool.h"
+#include "TriangleTool.h"
 namespace MeshAC{
 void generateConvexHull(const std::string &fileIn, const std::string &fileOut){
 	tetgenio in, out;
@@ -23,7 +24,7 @@ void generateConvexHull(const std::string &fileIn, const std::string &fileOut){
 }
 
 
-
+//dd
 void generateBoundingBoxTETGENIO(tetgenio &tetIn, Vector3D xyzmax, Vector3D xyzmin, double size, tetgenio &tetOut){
 
 	tetIn.firstnumber=0;
@@ -1201,7 +1202,7 @@ void generateBoundingBoxTETGENIO(Vector3D xyzmax, Vector3D xyzmin, double size, 
 	faceLeft.projectTRIANGULATEIO(triLeftRight, PROJECTION_TYPE::ZX_PLANE, xyzmin[1]);
 	deleteTRIANGULATEIOAllocatedArrays(triLeftRight);
 
-	double eps = 0.1*size;
+	double eps = 0.01*size;
 	aSurface.mergeSurfaceMesh(faceRight,eps);
 	aSurface.mergeSurfaceMesh(faceLeft, eps);
 	aSurface.mergeSurfaceMesh(faceFront, eps);
@@ -2020,8 +2021,7 @@ void generateConvaxHullFromPointsIn3DRemoveHoles(tetgenio &tet, Mesh &goalMesh, 
 		if(e->edit) continue;
 		for(int i=0; i<4; i++){
 			if (e->adjacentTetrahedrons[i]==nullptr || e->adjacentTetrahedrons[i]->edit){
-				Triangle *tri = new Triangle(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
-				goalSurface.triangles.push_back(tri);
+				goalSurface.addTriangle(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
 			}
 		}
 	}
@@ -2337,39 +2337,39 @@ std::vector<std::array<double,2>> &finalNodes, std::vector<std::array<int, 2>> &
 
 
 
-void setNullToTRIANGULATEIO(triangulateio &io){
-	io.edgelist = nullptr;
-	io.edgemarkerlist = nullptr;
-	io.holelist=nullptr;
-	io.neighborlist=nullptr;
-	io.normlist= nullptr;
-	io.pointattributelist=nullptr;
-	io.pointmarkerlist=nullptr;
-	io.pointlist=nullptr;
-	io.regionlist=nullptr;
-	io.segmentlist=nullptr;
-	io.segmentmarkerlist=nullptr;
-	io.trianglearealist=nullptr;
-	io.triangleattributelist=nullptr;
-	io.trianglelist=nullptr;
-}
+// void setNullToTRIANGULATEIO(triangulateio &io){
+// 	io.edgelist = nullptr;
+// 	io.edgemarkerlist = nullptr;
+// 	io.holelist=nullptr;
+// 	io.neighborlist=nullptr;
+// 	io.normlist= nullptr;
+// 	io.pointattributelist=nullptr;
+// 	io.pointmarkerlist=nullptr;
+// 	io.pointlist=nullptr;
+// 	io.regionlist=nullptr;
+// 	io.segmentlist=nullptr;
+// 	io.segmentmarkerlist=nullptr;
+// 	io.trianglearealist=nullptr;
+// 	io.triangleattributelist=nullptr;
+// 	io.trianglelist=nullptr;
+// }
 
-void deleteTRIANGULATEIOAllocatedArrays(triangulateio &io){
-	delete [] io.edgelist;
-	delete [] io.edgemarkerlist;
-	//delete [] io.holelist;
-	delete [] io.neighborlist;
-	delete [] io.normlist;
-	delete [] io.pointattributelist;
-	delete [] io.pointmarkerlist;
-	delete [] io.pointlist;
-	delete [] io.regionlist;
-	delete [] io.segmentlist;
-	delete [] io.segmentmarkerlist;
-	delete [] io.trianglearealist;
-	delete [] io.triangleattributelist;
-	delete [] io.trianglelist;	
-}
+// void deleteTRIANGULATEIOAllocatedArrays(triangulateio &io){
+// 	delete [] io.edgelist;
+// 	delete [] io.edgemarkerlist;
+// 	//delete [] io.holelist;
+// 	delete [] io.neighborlist;
+// 	delete [] io.normlist;
+// 	delete [] io.pointattributelist;
+// 	delete [] io.pointmarkerlist;
+// 	delete [] io.pointlist;
+// 	delete [] io.regionlist;
+// 	delete [] io.segmentlist;
+// 	delete [] io.segmentmarkerlist;
+// 	delete [] io.trianglearealist;
+// 	delete [] io.triangleattributelist;
+// 	delete [] io.trianglelist;	
+// }
 
 void generateMeshInPlaneWithEdges(std::vector<std::array<double,2>> &planeNodes, std::vector<std::array<int, 2>> &edges, std::vector<std::array<double,2>> holes, double maxAreaSize,  triangulateio &triOut){
 	struct triangulateio triIn;

@@ -21,7 +21,11 @@ set(MESHAC_SRCS
     ./src/SpatialSearcher.cpp
     ./src/sphere.cpp
     ./src/SurfaceMesh.cpp
+    ./src/PointSet.cpp
     ./src/CommandParser.cpp
+    ./src/TetgenTool.cpp
+    ./src/TriangleTool.cpp
+    ./src/Core.cpp
 )
 
 #tetgen

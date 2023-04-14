@@ -1,12 +1,23 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2022-03-26 22:06:24
- * @LastEditTime: 2023-04-06 01:24:49
+ * @LastEditTime: 2023-04-14 00:14:50
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/common.h
  */
 #pragma once
+
+enum POINT_LABEL{
+	ATOMISTIC_POINT=0,	
+	CONTINUUM_POINT,
+	ATOMISTIC_BORDER_POINT,
+	CONTINUUM_OUT_BORDER_POINT,
+};
+
+enum ELEMENT_LABEL{
+
+};
 // VTK Element types
 enum VTK_ELEMENT_TYPE {	
 	IGNORED = 0,
