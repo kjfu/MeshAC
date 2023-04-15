@@ -189,7 +189,8 @@ class SurfaceMesh;
         void readyForSpatialSearch(bool toBuildTetKDTree=true, bool toBuildNodeKDTree = true, bool toEstimateSizing = true);
         bool searchTetrahedronContain(Vector3D pos,  Tetrahedron* &goalTet);
         bool searchTetrahedronContain(Vector3D pos,  Tetrahedron* &goalTet, std::array<double, 4> &weights);
-        bool searchTetrahedronIntersect(Tetrahedron *keyTet, Tetrahedron* &goalTet);
+        bool checkTetrahedronIntersection(Tetrahedron *tet);
+        // bool searchTetrahedronIntersect(Tetrahedron *keyTet, Tetrahedron* &goalTet);
 
         //IO
         void loadMESH(const std::string &filePath);

@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:29:22
- * @LastEditTime: 2023-04-13 23:46:09
+ * @LastEditTime: 2023-04-15 10:10:15
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/PointSet.cpp
@@ -55,6 +55,7 @@ namespace MeshAC {
                 }
             }
         }
+        return 0;
     }
 
     int PointSet::calculateSubsetBoundingBox(int label, Vector3D &lowerBound, Vector3D &upperBound){
@@ -67,6 +68,7 @@ namespace MeshAC {
                 upperBound[i] = fmax(upperBound[i], v[i]);
             }
         }
+        return 0;
     }
 
 }

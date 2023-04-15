@@ -9,9 +9,9 @@ test.cpp
 # Test
 /test
 file/
-examples
 src/bak
 *.vtk
 *.value
 *.mesh
 *.remesh
+tmp/

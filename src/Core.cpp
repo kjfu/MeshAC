@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:56
- * @LastEditTime: 2023-04-14 23:59:18
+ * @LastEditTime: 2023-04-15 12:40:27
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.cpp
@@ -25,7 +25,7 @@ namespace MeshAC{
         //Input
         PointSet aPointSet;
         aPointSet.loadPointSet(input);
-
+    
         //Step 1: Generate sub-mesh for atomistic region
         Mesh atomisticMesh;
         SurfaceMesh interfaceSurfaceMesh;
@@ -64,13 +64,13 @@ namespace MeshAC{
         Mesh atomisticMesh;
         SurfaceMesh interfaceSurfaceMesh;
         generateMeshForAtomisticRegion(aPointSet.subsets[ATOMISTIC_POINT], atomisticMesh, interfaceSurfaceMesh);
-    
+
         //Step 2: Generate sub-mesh for continuum region
         Mesh continuumMesh;
         Vector3D upperBound;
         Vector3D lowerBound;
         aPointSet.calculateSubsetBoundingBox(CONTINUUM_POINT, lowerBound, upperBound);
-        
+
         Vector3D dxyz=upperBound-lowerBound;
         double tmp = fmax(dxyz[0], fmax(dxyz[1], dxyz[2]));
         size = size<1e-9 ? 0.1*tmp: size;
@@ -88,6 +88,7 @@ namespace MeshAC{
             interfaceSurfaceMesh,
             continuumMesh
         );
+
         //Output
         atomisticMesh.mergeMesh(continuumMesh, 1e-8);
         atomisticMesh.exportMESH(output);
@@ -202,7 +203,7 @@ namespace MeshAC{
                     }
                 }
                 if (isBorder){
-                    if (tetRadius[i]>1.5*eps){
+                    if (tetRadius[i]>2*eps){
                         resultingMesh.tetrahedrons[i]->edit = 1;
                         removes++;
                     }
@@ -214,6 +215,9 @@ namespace MeshAC{
             if(e->edit) continue;
             for(int i=0; i<4; i++){
                 if (e->adjacentTetrahedrons[i]==nullptr || e->adjacentTetrahedrons[i]->edit){
+                    e->nodes[(i+1)%4]->label = ATOMISTIC_BORDER_POINT;
+                    e->nodes[(i+2)%4]->label = ATOMISTIC_BORDER_POINT;
+                    e->nodes[(i+3)%4]->label = ATOMISTIC_BORDER_POINT;
                     interfaceMesh.addTriangle(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
                 }
             }
@@ -244,14 +248,14 @@ namespace MeshAC{
         Mesh &resultingMesh
     ){
         int numNodesOfInterface = interfaceSurfaceMesh.nodes.size();
-        int numNodesOfBoundingBox = boundingBoxSurfaceMesh.nodes.size();
+
 
         std::vector<Vector3D> holeCenters;
 
         interfaceSurfaceMesh.getSubRegionCenters(holeCenters);
 
-        interfaceSurfaceMesh.addSubSurfaceMesh(boundingBoxSurfaceMesh);
-
+        interfaceSurfaceMesh.mergeSurfaceMesh(boundingBoxSurfaceMesh, 1e-8);
+        int numNodesOfSurfaceMesh = interfaceSurfaceMesh.nodes.size();
         tetgenio in;
         tetgenio out;
         transportSurfaceMeshToTETGENIO(interfaceSurfaceMesh, holeCenters, in);
@@ -262,10 +266,10 @@ namespace MeshAC{
         for(int i=0; i<numNodesOfInterface; i++){
             resultingMesh.nodes[i]->label = 2;
         }
-        for(int i=numNodesOfInterface; i<numNodesOfInterface+numNodesOfBoundingBox; i++){
+        for(int i=numNodesOfInterface; i<numNodesOfSurfaceMesh; i++){
             resultingMesh.nodes[i]->label = 1;
         }
-        for( int i=numNodesOfInterface+numNodesOfBoundingBox; i<resultingMesh.nodes.size(); i++){
+        for( int i=numNodesOfSurfaceMesh; i<resultingMesh.nodes.size(); i++){
             resultingMesh.nodes[i]->label = 3;
         }
         for(auto &tet: resultingMesh.tetrahedrons){
@@ -520,7 +524,6 @@ namespace MeshAC{
                 n->label = label;
             }
         };
-  
   
         addNodeLabel(faceTop, 1);
         addNodeLabel(faceBottom, 1);

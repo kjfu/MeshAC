@@ -71,7 +71,7 @@ namespace MeshAC{
         }
 
 
-        std::string str = "pq30Qa"+std::to_string(maxAreaSize);
+        std::string str = "pqYQDa"+std::to_string(maxAreaSize);
         char cmd[256];
         strcpy(cmd, str.c_str());
         triangulate(cmd, &triIn, &triOut, nullptr);
