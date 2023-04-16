@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:56
- * @LastEditTime: 2023-04-15 12:40:27
+ * @LastEditTime: 2023-04-16 16:41:22
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.cpp
@@ -138,12 +138,63 @@ namespace MeshAC{
 
         //Output
         atomisticMesh.mergeMesh(blendMesh, 1e-10);
-        goalMesh.mergeMesh(blendMesh, 1e-10);
+        goalMesh.mergeMesh(atomisticMesh, 1e-10);
         backgroundMesh.interpolateNodeValuesForAnotherMesh(goalMesh);
         goalMesh.exportNodeValues(output + ".value");
         goalMesh.exportMESH(output + ".mesh");
         goalMesh.exportVTK(output+".vtk");
     }
+
+    void adaptiveRefineMeshForEdgeDislocation(
+        const std::string &input,
+        const std::string &output
+    ){
+        //Input
+        Mesh backgroundMesh;
+        Mesh goalMesh;
+        backgroundMesh.loadMESH(input + ".mesh");
+	    backgroundMesh.loadNodeValues(input + ".value");
+        
+        goalMesh.loadMESH(input + ".mesh");
+        std::vector<int> refine_elements;
+        std::vector<Vector3D> append_points;
+	    loadREMESH(refine_elements, append_points, input+".remesh");
+
+        //Step 1:
+        MeshRefiner aRefiner(&goalMesh);
+        aRefiner.refine(1, refine_elements, 1, 3);
+        
+        //Step 2:
+        std::vector<Vector3D> points;
+        for(auto &n: goalMesh.nodes){
+            if(n->label==2 || n->label==0){
+                points.emplace_back(n->pos);
+            }
+        }
+        for(auto &p: append_points){
+            points.emplace_back(p[0], p[1], p[2]);
+        }
+
+        Mesh atomisticMesh;
+        SurfaceMesh innerInterfaceSurfaceMesh;
+        SurfaceMesh outerInterfaceSurfaceMesh;
+        generateMeshForAtomisticRegion(points, atomisticMesh, innerInterfaceSurfaceMesh);
+
+        removeIntersectionElements(goalMesh, atomisticMesh, outerInterfaceSurfaceMesh);
+
+        Mesh blendMesh;
+        generateMeshForBlendRegionWithEdgeDislocation(outerInterfaceSurfaceMesh, innerInterfaceSurfaceMesh, blendMesh);
+        
+
+        //Output
+        atomisticMesh.mergeMesh(blendMesh, 1e-10);
+        goalMesh.mergeMesh(atomisticMesh, 1e-10);
+        backgroundMesh.interpolateNodeValuesForAnotherMesh(goalMesh);
+        goalMesh.exportNodeValues(output + ".value");
+        goalMesh.exportMESH(output + ".mesh");
+        goalMesh.exportVTK(output+".vtk");        
+    }
+
 
 
     void generateMeshForAtomisticRegion(
@@ -310,6 +361,121 @@ namespace MeshAC{
         }        
     }
 
+    void generateMeshForBlendRegionWithEdgeDislocation(
+        SurfaceMesh &outerInterfaceSurfaceMesh,
+        SurfaceMesh &innerInterfaceSurfaceMesh,
+        Mesh &resultingMesh
+    ){
+
+
+
+        std::vector<Vector3D> holeCenters;
+
+        innerInterfaceSurfaceMesh.getSubRegionCenters(holeCenters);
+
+        SurfaceMesh blendSurfaceMesh;
+        generateTopBottomSurfaceMeshForBlendRegion(outerInterfaceSurfaceMesh, innerInterfaceSurfaceMesh, blendSurfaceMesh);
+        int numNodesOfInner = innerInterfaceSurfaceMesh.nodes.size();
+        innerInterfaceSurfaceMesh.mergeSurfaceMesh(blendSurfaceMesh);
+        int numNodesOfInnerBlend = innerInterfaceSurfaceMesh.nodes.size();
+        
+        innerInterfaceSurfaceMesh.mergeSurfaceMesh(outerInterfaceSurfaceMesh);
+
+        tetgenio in;
+        tetgenio out;
+        transportSurfaceMeshToTETGENIO(innerInterfaceSurfaceMesh, holeCenters, in);
+        char cmd[] = "pq1.1/10YQ";
+	    tetrahedralize(cmd, &in, &out);
+
+        transportTETGENIOToMesh(out, resultingMesh);
+        for(int i=0; i<numNodesOfInner; i++){
+            resultingMesh.nodes[i]->label = 2;
+        }
+
+        for( int i=numNodesOfInner; i<numNodesOfInnerBlend; i++){
+            resultingMesh.nodes[i]->label = 1;
+        }
+
+        for( int i=numNodesOfInnerBlend; i<resultingMesh.nodes.size(); i++){
+            resultingMesh.nodes[i]->label = 3;
+        }
+        for(auto &tet: resultingMesh.tetrahedrons){
+            tet->label=1;
+        }
+    }
+
+
+    void generateTopBottomSurfaceMeshForBlendRegion(
+        SurfaceMesh &outerInterfaceSurfaceMesh,
+        SurfaceMesh &innerInterfaceSurfaceMesh,
+        SurfaceMesh &resultingMesh
+    ){
+        std::vector<double> lowerBound;
+        std::vector<double> upperBound;
+        innerInterfaceSurfaceMesh.getBoundingBox(lowerBound, upperBound);
+
+        std::vector<std::array<double, 2>> outerTopEdgeNodes;
+        std::vector<std::array<double, 2>> outerBottomEdgeNodes;
+        std::vector<std::array<int, 2>> outerTopEdges;
+        std::vector<std::array<int, 2>> outerBottomEdges;
+
+        removeTopBottomTrianglesInSurfaceMesh(outerInterfaceSurfaceMesh, upperBound[2], lowerBound[2], outerTopEdgeNodes, outerBottomEdgeNodes, outerTopEdges, outerBottomEdges);
+
+        std::vector<std::array<double, 2>> innerTopEdgeNodes;
+        std::vector<std::array<double, 2>> innerBottomEdgeNodes;
+        std::vector<std::array<int, 2>> innerTopEdges;
+        std::vector<std::array<int, 2>> innerBottomEdges;
+        removeTopBottomTrianglesInSurfaceMesh(innerInterfaceSurfaceMesh, upperBound[2], lowerBound[2], innerTopEdgeNodes, innerBottomEdgeNodes, innerTopEdges, innerBottomEdges);
+
+        std::vector<std::array<double,2>> topHoles;
+        std::array<double,2> topHole={0,0};
+        double topFactor = 1.0/ double(innerTopEdgeNodes.size());
+        for(auto &n: innerTopEdgeNodes){
+            topHole[0]+=topFactor*n[0];
+            topHole[1]+=topFactor*n[1];
+        }
+        topHoles.push_back(topHole);
+
+        int base=outerTopEdgeNodes.size();
+        for(auto &p: innerTopEdgeNodes){
+            outerTopEdgeNodes.push_back(p);
+        }
+        for(auto &e: innerTopEdges){
+            outerTopEdges.push_back({e[0]+base, e[1]+base});
+        }
+        triangulateio topFacet;
+        SurfaceMesh topSurfaceMesh;
+        generateTRIANGULATEIOWithEdges(outerTopEdgeNodes, outerTopEdges, topHoles, 0, topFacet);
+        topSurfaceMesh.projectTRIANGULATEIO(topFacet, PROJECTION_TYPE::XY_PLANE, upperBound[2]);
+        deleteTRIANGULATEIOAllocatedArrays(topFacet);
+
+        std::vector<std::array<double,2>> bottomHoles;
+        std::array<double,2> bottomHole={0,0};
+        double bottomFactor = 1.0/ double(innerBottomEdges.size());
+        for(auto &n: innerBottomEdgeNodes){
+            bottomHole[0]+=bottomFactor*n[0];
+            bottomHole[1]+=bottomFactor*n[1];
+        }
+        bottomHoles.push_back(bottomHole);
+
+        base=outerBottomEdgeNodes.size();
+        for(auto &p: innerTopEdgeNodes){
+            outerBottomEdgeNodes.push_back(p);
+        }
+        for(auto &e: innerTopEdges){
+            outerBottomEdges.push_back({e[0]+base, e[1]+base});
+        }
+        triangulateio bottomFacet;
+        SurfaceMesh bottomSurfaceMesh;
+        generateTRIANGULATEIOWithEdges(outerBottomEdgeNodes, outerBottomEdges, bottomHoles, 0, bottomFacet);
+        bottomSurfaceMesh.projectTRIANGULATEIO(bottomFacet, PROJECTION_TYPE::XY_PLANE, lowerBound[2]);
+        deleteTRIANGULATEIOAllocatedArrays(bottomFacet);
+
+        resultingMesh.addSubSurfaceMesh(topSurfaceMesh);
+        resultingMesh.addSubSurfaceMesh(bottomSurfaceMesh);
+        
+    }
+
     void generateBoundingBoxSurfaceMesh(
         const Vector3D &lowerBound,
         const Vector3D &upperBound,
@@ -402,6 +568,7 @@ namespace MeshAC{
             }
             return rst;
         };
+        
         for (auto &n: surfaceMesh.nodes){
             if (abs(n->pos[2]-top)<1e-13){
                 n->edit = 1;

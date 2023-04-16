@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-06 01:09:29
- * @LastEditTime: 2023-04-14 14:15:58
+ * @LastEditTime: 2023-04-16 14:47:58
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/SurfaceMesh.h
@@ -41,6 +41,21 @@ public:
         Triangle *tri = new Triangle(n0,n1,n2);
         triangles.push_back(tri);
         return tri;
+    }
+
+    void getBoundingBox(std::vector<double> &lowerBound, std::vector<double> &upperBound){
+        lowerBound.resize(3);
+        upperBound.resize(3);
+        for(int i = 0; i <3; i++){
+            lowerBound[i] = nodes[0]->pos[i];
+            upperBound[i] = nodes[0]->pos[i];
+        }
+        for(int n=1; n<nodes.size(); n++){
+            for(int i = 0; i <3; i++){
+                lowerBound[i] = fmin(lowerBound[i], nodes[n]->pos[i]);
+                upperBound[i] = fmax(upperBound[i], nodes[n]->pos[i]);
+            }            
+        }        
     }
 
     void cloneSurfaceMesh(SurfaceMesh &another);

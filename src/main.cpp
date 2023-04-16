@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-06 01:09:07
- * @LastEditTime: 2023-04-15 09:53:04
+ * @LastEditTime: 2023-04-15 15:48:46
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/main.cpp
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
 		adaptiveRefineMesh(info.input, info.output);
 	}
 	else if (info.type == FT_ADAPTIVE_REFINEMENT_FOR_EDGE_DISLOCATION){
-		
+		adaptiveRefineMeshForEdgeDislocation(info.input, info.output);
 	}
 	return 0;
 }

@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:47
- * @LastEditTime: 2023-04-14 23:52:12
+ * @LastEditTime: 2023-04-16 15:57:32
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.h
@@ -31,6 +31,10 @@ namespace MeshAC{
     );
 
 
+    void adaptiveRefineMeshForEdgeDislocation(
+        const std::string &input,
+        const std::string &output
+    );
 
 
 
@@ -40,8 +44,7 @@ namespace MeshAC{
 
 
 
-
-
+    
 
 
 
@@ -61,6 +64,18 @@ namespace MeshAC{
         SurfaceMesh &outerInterfaceSurfaceMesh,
         SurfaceMesh &innerInterfaceSurfaceMesh,
         Mesh &resultingMesh
+    );
+
+    void generateMeshForBlendRegionWithEdgeDislocation(
+        SurfaceMesh &outerInterfaceSurfaceMesh,
+        SurfaceMesh &innerInterfaceSurfaceMesh,
+        Mesh &resultingMesh
+    );
+    
+    void generateTopBottomSurfaceMeshForBlendRegion(
+        SurfaceMesh &outerInterfaceSurfaceMesh,
+        SurfaceMesh &innerInterfaceSurfaceMesh,
+        SurfaceMesh &resultingMesh
     );
 
     void generateBoundingBoxSurfaceMesh(
@@ -102,5 +117,7 @@ namespace MeshAC{
         std::vector<Tetrahedron *>&tets, 
         SurfaceMesh &aSurface
     );
+
+
 
 }
