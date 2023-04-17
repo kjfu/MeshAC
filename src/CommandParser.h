@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-10 08:40:35
- * @LastEditTime: 2023-04-14 14:49:32
+ * @LastEditTime: 2023-04-16 17:18:35
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/CommandParser.h
@@ -23,6 +23,14 @@ namespace MeshAC{
 
     };
 
+    /**
+     * @brief 
+     * 
+     * @param argc 
+     * @param argv 
+     * @param res 
+     * @return int 
+     */
     int parseCommandLine(int argc, char* argv[], CommandInfo &res);
 
 }

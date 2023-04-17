@@ -31,9 +31,15 @@ class SurfaceMesh;
         tetgenmesh tet;
         return tet.tri_tri_inter(my.forms[0]->pos.data(), my.forms[1]->pos.data(), my.forms[2]->pos.data()
         ,another.forms[0]->pos.data(), another.forms[1]->pos.data(), another.forms[2]->pos.data());
+        
     }
 
-
+    inline bool testIntersection(SubTriangle &tri, SubEdge &e){
+        tetgenmesh tet;
+        return tet.tri_edge_test(tri.forms[0]->pos.data(), tri.forms[1]->pos.data(), tri.forms[2]->pos.data(), 
+        e.forms[0]->pos.data(), e.forms[1]->pos.data(), nullptr, 0, nullptr, nullptr);
+        
+    }
 
 
     class Mesh{
@@ -190,6 +196,7 @@ class SurfaceMesh;
         bool searchTetrahedronContain(Vector3D pos,  Tetrahedron* &goalTet);
         bool searchTetrahedronContain(Vector3D pos,  Tetrahedron* &goalTet, std::array<double, 4> &weights);
         bool checkTetrahedronIntersection(Tetrahedron *tet);
+        bool checkTetrahedronContain(Vector3D &pos);
         // bool searchTetrahedronIntersect(Tetrahedron *keyTet, Tetrahedron* &goalTet);
 
         //IO

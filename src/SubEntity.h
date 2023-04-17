@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-27 19:53:49
- * @LastEditTime: 2023-04-11 14:55:23
+ * @LastEditTime: 2023-04-16 17:18:01
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/SubEntity.h
@@ -15,6 +15,7 @@ namespace MeshAC{
     class Triangle;
     class Tetrahedron;
 
+    
     class SubEdge{
     public:
         Tetrahedron *tetrahedron=nullptr;

@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2022-01-21 01:40:25
- * @LastEditTime: 2023-04-14 23:09:26
+ * @LastEditTime: 2023-04-17 15:22:08
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/SpatialSearcher.h
@@ -46,6 +46,7 @@ public:
     void searchTetrahedronContain(Vector3D position, SearchTetrahedronResult &result);
     
     bool checkTetrahedronIntersection(Tetrahedron *tet);
+    bool checkTetrahedronContain(Vector3D position);
 
     void removeTetrahedron(Tetrahedron *pTet);
     void insertTetrahedron(Tetrahedron *pTet);

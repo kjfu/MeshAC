@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:56
- * @LastEditTime: 2023-04-16 16:41:22
+ * @LastEditTime: 2023-04-17 15:35:49
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.cpp
@@ -104,7 +104,7 @@ namespace MeshAC{
         Mesh goalMesh;
         backgroundMesh.loadMESH(input + ".mesh");
 	    backgroundMesh.loadNodeValues(input + ".value");
-        
+
         goalMesh.loadMESH(input + ".mesh");
         std::vector<int> refine_elements;
         std::vector<Vector3D> append_points;
@@ -129,7 +129,6 @@ namespace MeshAC{
         SurfaceMesh innerInterfaceSurfaceMesh;
         SurfaceMesh outerInterfaceSurfaceMesh;
         generateMeshForAtomisticRegion(points, atomisticMesh, innerInterfaceSurfaceMesh);
-
         removeIntersectionElements(goalMesh, atomisticMesh, outerInterfaceSurfaceMesh);
 
         Mesh blendMesh;
@@ -714,10 +713,6 @@ namespace MeshAC{
     ){
         expandedAtomisticMesh.readyForSpatialSearch();
 
-        AABBox anotherBox;
-        for(auto n: expandedAtomisticMesh.nodes){
-            anotherBox.insert(n->pos);
-        }
         for(auto n: originalMesh.nodes){
             n->edit = 0;
         }
@@ -728,35 +723,25 @@ namespace MeshAC{
                 e->edit = 1;
                 continue;
             }
-            bool maybeIntersect=false;
             for(auto n: e->nodes){
                 if (n->edit==1){
                     e->edit = 1;
                     break;
                 }
-                else if(n->edit==-1){
-                    continue;
+
+
+                if (expandedAtomisticMesh.checkTetrahedronContain(n->pos)){
+                    e->edit = 1;
+                    n->edit = 1;
                 }
 
-                if (anotherBox.contain(n->pos, 1e-10)){
-                    Tetrahedron *goalTet;
-                    if (expandedAtomisticMesh.searchTetrahedronContain(n->pos, goalTet)){
-                        e->edit = 1;
-                        n->edit = 1;
-                    }
-                    else{
-                        maybeIntersect = true;
-                    }
-                }
-                else{
-                    n->edit = -1;
-                }
                 if(e->edit==1) break;
             }
 
-            if(maybeIntersect && e->edit == 0){
-                expandedAtomisticMesh.checkTetrahedronIntersection(e);
-                e->edit = 1;
+            if(e->edit == 0){
+                if(expandedAtomisticMesh.checkTetrahedronIntersection(e)){
+                    e->edit = 1;
+                }
             }
         }
 

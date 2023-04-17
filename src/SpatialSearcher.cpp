@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2022-01-21 17:11:50
- * @LastEditTime: 2023-04-14 23:20:07
+ * @LastEditTime: 2023-04-17 15:59:34
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/SpatialSearcher.cpp
@@ -41,9 +41,9 @@ bool SpatialSearcher::checkTetrahedronIntersection(Tetrahedron *tet){
         Tetrahedron *another = ID2TET[id];
         for(int i=0; i<4; i++){
             SubTriangle f=tet->getSubTriangle(i);
-            for(int j=0; j<4; j++){
-                SubTriangle ff=another->getSubTriangle(j);
-                if (testIntersection(f, ff)){
+            for(int j=0; j<6; j++){
+                SubEdge e=another->getSubEdge(j);
+                if (testIntersection(f, e)){
                     return true;
                 }
             }
@@ -52,7 +52,31 @@ bool SpatialSearcher::checkTetrahedronIntersection(Tetrahedron *tet){
 
     return false;
 }
-void SpatialSearcher:: searchTetrahedronContain(Vector3D position, SearchTetrahedronResult &result){
+
+    bool SpatialSearcher::checkTetrahedronContain(Vector3D position){
+        std::vector<double> pos = position.toSTDVector();
+        aTree.insertParticle(std::numeric_limits<unsigned int>::max(), pos, 0);
+        std::vector<unsigned int> ids = aTree.query(std::numeric_limits<unsigned int>::max());
+        aTree.removeParticle(std::numeric_limits<unsigned int>::max()); 
+        for(auto id: ids){
+            std::vector<int> zeroNodeIndices;
+            Tetrahedron *tet = ID2TET[id];
+            int insideCounts=0;
+            for(int i=0; i<4; i++){
+                double o3d = orient3d(
+                    tet->nodes[TetrahedronFacet[i][0]]->pos.data(), 
+                    tet->nodes[TetrahedronFacet[i][1]]->pos.data(), 
+                    tet->nodes[TetrahedronFacet[i][2]]->pos.data(), 
+                    position.data());
+                if (o3d>0) break;
+                if (o3d==0) zeroNodeIndices.push_back(i);
+                insideCounts++;
+            }
+            if(insideCounts==4) return true;
+        }
+        return false;
+    }
+void SpatialSearcher::searchTetrahedronContain(Vector3D position, SearchTetrahedronResult &result){
     std::vector<double> pos = position.toSTDVector();
     aTree.insertParticle(std::numeric_limits<unsigned int>::max(), pos, 0);
     std::vector<unsigned int> ids = aTree.query(std::numeric_limits<unsigned int>::max());

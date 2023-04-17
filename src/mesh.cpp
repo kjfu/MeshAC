@@ -168,11 +168,11 @@ void Mesh::deleteTetrahedrons(std::vector<Tetrahedron *> &delElements){
     }
 
     for(auto e: delElements){
-        for(auto ee: e->adjacentTetrahedrons){
-            if (ee){
-                ee->removeAdjacentTetrahedron(e);
-            }
-        }
+        // for(auto ee: e->adjacentTetrahedrons){
+        //     if (ee){
+        //         ee->removeAdjacentTetrahedron(e);
+        //     }
+        // }
         e->edit = -1;
     }
 
@@ -457,6 +457,11 @@ void Mesh::readyForSpatialSearch(bool toBuildTetKDTree, bool toBuildNodeKDTree, 
     bool Mesh::checkTetrahedronIntersection(Tetrahedron *tet){
         return aSearcher.checkTetrahedronIntersection(tet);
     }
+
+    bool Mesh::checkTetrahedronContain(Vector3D &pos){
+        return aSearcher.checkTetrahedronContain(pos);
+    }
+
     bool Mesh::searchTetrahedronContain(Vector3D pos, Tetrahedron* &goalTet){
         SearchTetrahedronResult res;
         aSearcher.searchTetrahedronContain(pos, res);

@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:47
- * @LastEditTime: 2023-04-16 15:57:32
+ * @LastEditTime: 2023-04-16 17:19:02
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.h
@@ -11,7 +11,7 @@
 #include "mesh.h"
 #include "SurfaceMesh.h"
 namespace MeshAC{
-
+    /* Main Functions */
     void generateMeshFromPoints(
         const std::string &input, 
         const std::string &output, 
@@ -46,7 +46,7 @@ namespace MeshAC{
 
     
 
-
+    /* Assistant Functions */
 
     void generateMeshForAtomisticRegion(
         const std::vector<Vector3D> &points,
