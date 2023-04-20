@@ -41,9 +41,18 @@ Atomistic-to-continuum coupling method in Julia. The current implementation is b
 
 The atomistic computations involved are heavily depends on the pure Julia package [JuLIP](https://github.com/JuliaMolSim/JuLIP.jl) (Julia Library for Interatomic Potentials).
 
-Julia Packages involved: JuLIP, DelimitedFiles, Printf, NeighbourLists, QHull, Optim, LineSearches, SparseArrays, nsoli.
+1. Install Julia 1.8.5 from [here](https://julialang.org/downloads/); 
+2. Run the following Julia commands step by step:
+```
+using Pkg; 
+] registry add https://github.com/JuliaRegistries/General"; 
+] registry add https://github.com/ACEsuit/ACEregistry"; 
+] add JuLIP, DelimitedFiles, Printf, NeighbourLists, QHull, Optim, LineSearches, SparseArrays, nsoli, PyCall
+```
 
-Please do remember to modify the path of mesher3d in AtC constructor (AtC.jl).
+Tips:
+1. Use ```Pkg.activate(".")``` to use a local project and set environment variable ```JULIA_PROJECT``` accordingly. 
+2. Please do remember to modify the path of mesher3d in AtC constructor (AtC.jl).
 
 ### FIO
 
