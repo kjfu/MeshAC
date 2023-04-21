@@ -64,7 +64,7 @@ Options:
 #### To generate a 3d mesh from points with edge dislocation
 
 ```
->>./MeshAC -hd test3d.mesh -s 15 -o out3d.mesh
+>>./MeshAC -hd -i test3d.mesh -s 15 -o out3d.mesh
 ````
 
 #### To remesh a 3d mesh adaptively
