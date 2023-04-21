@@ -69,7 +69,14 @@ and write .dump files for visualization.
 Example:
 
 ```julia
-...
+fn = "a.mesh"
+# X: atom positions and outer continuum points; Xtype: interface information
+ACFIO.write_mesh(fn, X, Xtype)
+# call `mesher3d` to build coupled mesh
+ofn = "ac.mesh"
+run(`$meshpath -s $h -hh $fn -o $ofn`)
+# X: nodes; T: mesh topology
+X, T = ACFIO.read_mesh(ofn)
 ```
 
 ### AtC
@@ -85,7 +92,10 @@ Note that `meshpath` is the path of mesher toolkit that may differ from each dev
 Example:
 
 ```julia
-...
+# construct atomistic region with defects. R: radius; 
+atdef = get_atdef(R)
+# construct a/c coupling structure. h: mesh size; L: size of computational domain
+atc0 = AtC_di(atdef, h, L)
 ```
 
 ### Adaptive
@@ -94,11 +104,11 @@ Solve $\to$ Estimate $\to$ Mark $\to$ Refine
 
 1. Solve
 
-`BGFC/AtC` + `BGFC/Solve`: We use `minimise!` which is based on the implementation of `JuLIP.Solve` and `nsoli` as well.
+`src/AtC` + `src/Solve`: We use `minimise!` which is based on the implementation of `JuLIP.Solve` and `nsoli` as well.
 
 2. Estimate
 
-$\|\nabla u\|_{L^2(T)}$ for all $T\in\mathcal{T}$
+$\|\nabla u\|_{L^2(T)}$ for all $T\in\mathcal{T}$, where $\mathcal{T}$ is constructed by `ACFIO` part.
 
 3. Mark
 
@@ -107,7 +117,7 @@ $\|\nabla u\|_{L^2(T)}$ for all $T\in\mathcal{T}$
 
 4. Refine
 
-Call `mesher3d -r`
+Call `mesher3d -r`, see `./src/adaptive.jl` for more details.
 
 This refinement functional requires \*.mesh, \*.remash, and \*.value files in the same path.
 
@@ -120,9 +130,8 @@ This refinement functional requires \*.mesh, \*.remash, and \*.value files in th
 	- vector displacement
 
 Example:
-
 ```julia
-...
+include("./examples/test_adaptive.jl")
 ```
 
 ## Development
