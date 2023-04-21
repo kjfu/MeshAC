@@ -1,7 +1,7 @@
 <!--
  * @Author: Kejie Fu
  * @Date: 2023-03-11 23:20:09
- * @LastEditTime: 2023-04-10 01:23:01
+ * @LastEditTime: 2023-04-21 22:11:12
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/README.md
@@ -14,11 +14,88 @@ A 3D Mesh Generation and Adaptation Package for Multiscale (atomistic-to-continu
 ![two voids](./data/two_voids.jpg)
 
 ## Getting Started
+### Installation
 
-You can install MeshAC with ...
+You can install MeshAC with the following steps:
+- Clone the repository into your local machine:
+
+```bash
+git clone https://github.com/kjfu/MeshAC.git
 ```
-...
+
+- Compile the code using cmake:
+  
+```bash
+cd MeshAC
+mkdir build
+cd build
+cmake ..
+make
 ```
+### Command Line Switches
+
+MeshAC supports usage via command line. Here is an overview of all command line switches:
+
+```
+Usage: ./MeshAC [OPTIONS] input [output]
+
+Postionals:
+	input TEXT REQUIRED     Input a file of initial mesh(.mesh) for mesh generation or middle files
+							(.mesh, .remesh and .value) for mesh adaptation.(string, required)
+	output TEXT             Output a file of resulting mesh (.mesh) or a file of interpolation solutions
+							(.value).
+
+Options:
+	-h			            Print this help message and exit.
+	-i	TEXT REQUIRED       Input a file of initial mesh(.mesh) for mesh generation or middle files
+							(.mesh, .remesh and .value) for mesh adaptation.(string, required)
+	-o 	TEXT                Output a file of resulting mesh (.mesh) or a file of interpolation solutions
+							(.value).
+	-s  FLOAT               Input the max sizing value for mesh generation.
+	-hd                     Generate a mesh with edge dislocation.
+	-r                      Refine an existing mesh adaptively.
+	-rr                     Refine an existing mesh with edge dislocation adaptively.
+```
+### Examples
+#### To generate 3d mesh from points（with 8 points as bounding points with label 1, and several atomistic points with label 0）
+```
+>> ./MeshAC -s 5 -i sample.mesh -o outmesh.mesh
+```
+#### To generate a 3d mesh from points with edge dislocation
+
+```
+>>./MeshAC -hd test3d.mesh -s 15 -o out3d.mesh
+````
+
+#### To remesh a 3d mesh adaptively
+You must keep 3 files (*.mesh, *.remesh, *.value) in same path.
+```
+>>./MeshAC -r -i test3d -o out3d
+```
+
+#### To remesh a 3d mesh with edge dislocation adaptively
+You must keep 3 files(*.mesh, *.remesh, and *.value) in same path 
+```
+>>./MeshAC -rr -i test3d -o out3d
+```
+
+### Labels Meanings in .mesh file
+
+#### Labels for nodes
+
+| Label | Significance |Tip|
+|:------|:-------|:-----|
+|0|Nodes inside the atomic area||
+|1|Nodes on the border of the continuous area||
+|2|Nodes on the border of the atomic area||
+|3|Nodes between the border of the continuous area and the border of the atomic area||
+#### Labels for tets
+
+| Label | Significance |Tip|
+|:------|:-------|:-----|
+|0|Tets of the atomic area||
+|1|Tets of the continuous area||
+
 
 ## Overview
 
@@ -136,21 +213,6 @@ include("./examples/test_adaptive.jl")
 
 ## Development
 
-- Clone the repository into your local machine:
-
-```bash
-git clone https://github.com/kjfu/MeshAC.git
-```
-
-- Compile the code using cmake:
-  
-```bash
-cd MeshAC
-mkdir build
-cd build
-cmake ..
-make
-```
 
 MeshAC is under active development. Please don't hesitate to open feature requests to help us guide development. We more than welcome contributions!
 
