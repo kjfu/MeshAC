@@ -97,7 +97,7 @@ You must keep 3 files(*.mesh, *.remesh, and *.value) in same path
 |1|Tets of the continuous area||
 
 
-## Overview
+<!-- ## Overview
 
 We now summarize the main components of the library. 
 
@@ -110,7 +110,7 @@ We now summarize the main components of the library.
 The following functionals are currently supported:
 - [`...`](...) ....
 
-From Mesher3DForSJTU package ...
+From Mesher3DForSJTU package ... -->
 
 ## A/C coupling method in Julia
 
