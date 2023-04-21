@@ -41,16 +41,16 @@ Usage: ./MeshAC [OPTIONS] input [output]
 
 Postionals:
 	input TEXT REQUIRED     Input a file of initial mesh(.mesh) for mesh generation or middle files
-							(.mesh, .remesh and .value) for mesh adaptation.(string, required)
+				(.mesh, .remesh and .value) for mesh adaptation.(string, required)
 	output TEXT             Output a file of resulting mesh (.mesh) or a file of interpolation solutions
-							(.value).
+				(.value).
 
 Options:
-	-h			            Print this help message and exit.
-	-i	TEXT REQUIRED       Input a file of initial mesh(.mesh) for mesh generation or middle files
-							(.mesh, .remesh and .value) for mesh adaptation.(string, required)
-	-o 	TEXT                Output a file of resulting mesh (.mesh) or a file of interpolation solutions
-							(.value).
+	-h			Print this help message and exit.
+	-i TEXT REQUIRED        Input a file of initial mesh(.mesh) for mesh generation or middle files
+				(.mesh, .remesh and .value) for mesh adaptation.(string, required)
+	-o TEXT                 Output a file of resulting mesh (.mesh) or a file of interpolation solutions
+				(.value).
 	-s  FLOAT               Input the max sizing value for mesh generation.
 	-hd                     Generate a mesh with edge dislocation.
 	-r                      Refine an existing mesh adaptively.
