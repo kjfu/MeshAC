@@ -78,7 +78,7 @@ function AtC(Ra::Int64, bw::Int64, Lmsh, h;
 	ACFIO.write_mesh(fn, X, Xtype)
 	# call `mesher3d` to build coupled mesh
 	ofn = "../FIO/out3d.mesh"
-	run(`$meshpath -s $h $fn -o $ofn`)
+	run(`$meshpath -s -i $h $fn -o $ofn`)
 	X, T = ACFIO.read_mesh(ofn)
 	iBdry = findall(x->x==2.0, X[4,:])
 

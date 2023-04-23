@@ -54,7 +54,7 @@ function refine!(atc::Main.AtC{Float64}, X::Array{Float64,2}, TIdx::Vector{Int64
 	vfn = "../FIO/adaptive/$(filename).value"
 	Main.ACFIO.write_value(vfn, atc.U)
 	rfn = "../FIO/adaptive/$(filename)"
-	run(`$meshpath -r $rfn`)
+	run(`$meshpath -r -i $rfn`)
 	ufn = "../FIO/adaptive/$(filename)_out.value"
 	U = Main.ACFIO.read_value(ufn)
 	# update!(atc, u)

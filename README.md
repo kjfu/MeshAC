@@ -151,7 +151,7 @@ fn = "a.mesh"
 ACFIO.write_mesh(fn, X, Xtype)
 # call `mesher3d` to build coupled mesh
 ofn = "ac.mesh"
-run(`$meshpath -s $h -hh $fn -o $ofn`)
+run(`$meshpath -s $h -i $fn -o $ofn`)
 # X: nodes; T: mesh topology
 X, T = ACFIO.read_mesh(ofn)
 ```
@@ -172,7 +172,7 @@ Example:
 # construct atomistic region with defects. R: radius; 
 atdef = get_atdef(R)
 # construct a/c coupling structure. h: mesh size; L: size of computational domain
-atc0 = AtC_di(atdef, h, L)
+atc0 = AtC(atdef, h, L)
 ```
 
 ### Adaptive
