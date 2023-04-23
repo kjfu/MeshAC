@@ -1,13 +1,13 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-10 08:43:17
- * @LastEditTime: 2023-04-15 09:52:18
+ * @LastEditTime: 2023-04-23 23:17:57
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/CommandParser.cpp
  */
 #include "CommandParser.h"
-
+#include <iostream>
 namespace MeshAC{
     int parseCommandLine(int argc, char* argv[], CommandInfo &res){
         for(int i=1; i<argc; i++){
@@ -34,6 +34,25 @@ namespace MeshAC{
                 res.output = std::string(argv[i]);
             }
             else if (str=="-h" || str=="--help"){
+                std::cout << "Usage: ./MeshAC [OPTIONS] input [output]                                                                " << std::endl;
+                std::cout                                                                                                               << std::endl;
+                std::cout << "Postionals:                                                                                             " << std::endl;
+                std::cout << "    input  TEXT REQUIRED    Input a file of initial mesh(.mesh) for mesh generation or middle files     " << std::endl;
+                std::cout << "                            (.mesh, .remesh and .value) for mesh adaptation.(string, required)          " << std::endl;
+                std::cout << "    output TEXT             Output a file of resulting mesh (.mesh) or a file of interpolation solutions" << std::endl;
+                std::cout << "                            (.value).                                                                   " << std::endl;
+                std::cout                                                                                                               << std::endl;
+                std::cout << "Options:                                                                                                " << std::endl;
+                std::cout << "    -h			          Print this help message and exit.                                           " << std::endl;
+                std::cout << "    -i TEXT REQUIRED        Input a file of initial mesh(.mesh) for mesh generation or middle files     " << std::endl;
+                std::cout << "                            (.mesh, .remesh and .value) for mesh adaptation.(string, required)          " << std::endl;
+                std::cout << "    -o TEXT                 Output a file of resulting mesh (.mesh) or a file of interpolation solutions" << std::endl;
+                std::cout << "                            (.value).                                                                   " << std::endl;
+                std::cout << "    -s  FLOAT               Input the max sizing value for mesh generation.                             " << std::endl;
+                std::cout << "    -hd                     Generate a mesh with edge dislocation.                                      " << std::endl;
+                std::cout << "    -r                      Refine an existing mesh adaptively.                                         " << std::endl;
+                std::cout << "    -rr                     Refine an existing mesh with edge dislocation adaptively.                   " << std::endl;
+
                 exit(0);
             }
         }

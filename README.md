@@ -1,7 +1,7 @@
 <!--
  * @Author: Kejie Fu
  * @Date: 2023-03-11 23:20:09
- * @LastEditTime: 2023-04-21 22:11:12
+ * @LastEditTime: 2023-04-23 23:22:17
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/README.md
@@ -79,7 +79,7 @@ You must keep 3 files(*.mesh, *.remesh, and *.value) in same path
 >>./MeshAC -rr -i test3d -o out3d
 ```
 
-### Labels Meanings in .mesh file
+### Label Meanings in .mesh file
 
 #### Labels for nodes
 
