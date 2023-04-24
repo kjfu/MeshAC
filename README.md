@@ -237,3 +237,12 @@ If you use the codes in a publication, please cite the repo using the .bib,
  year = {...}
 }
 ```
+
+## Acknowledgements
+
+We used several useful libraries in our implement and testing listed as follows. We would like to especially thank their authors for their great work and publishing the code.
+
+- [Tetgen](http://www.tetgen.org)
+- [Triangle](http://www.cs.cmu.edu/~quake/triangle.html)
+- [AABB.cc](https://github.com/lohedges/aabbcc.git)
+- [kdtree](https://github.com/jtsiomb/kdtree.git)
