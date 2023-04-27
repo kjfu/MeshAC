@@ -185,7 +185,7 @@ Solve $\to$ Estimate $\to$ Mark $\to$ Refine
 
 2. Estimate
 
-$\|\nabla u\|_{L^2(T)}$ for all $T\in\mathcal{T}$, where $\mathcal{T}$ is constructed by `ACFIO` part.
+$\Vert\nabla u\Vert_{L^2(T)}$ for all $T\in\mathcal{T}$, where $\mathcal{T}$ is constructed by `ACFIO` part.
 
 3. Mark
 
