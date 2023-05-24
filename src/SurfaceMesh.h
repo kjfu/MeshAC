@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-06 01:09:29
- * @LastEditTime: 2023-04-16 14:47:58
+ * @LastEditTime: 2023-05-23 22:29:14
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/SurfaceMesh.h
@@ -67,6 +67,7 @@ public:
 
     void rebuildTriangleAdjacency();
 
+    void removeUnclosedMesh();
 
     void deleteTriangles(std::vector<Triangle *> &toDelTriangles);
 
@@ -74,6 +75,7 @@ public:
     
     void projectTRIANGULATEIO(triangulateio &in, PROJECTION_TYPE projectionType, double offset);
 
+    void smooth(int numIters=3);
     //
     void loadMESH(const std::string &filePath);
     void loadVTK(const std::string &filePath);

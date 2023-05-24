@@ -145,27 +145,91 @@ void SurfaceMesh::loadMESH(const std::string &filePath){
         }
     }
 
-void SurfaceMesh::rebuildTriangleAdjacency(){
-    std::unordered_map<SubEdge, SubEdge, SubEdgeHasher, SubEdgeEqual> edgeMap;
-    for(auto tri: triangles){
-        tri->adjacentTriangles[0]=nullptr;
-        tri->adjacentTriangles[1]=nullptr;
-        tri->adjacentTriangles[2]=nullptr;
-    }
-    for(auto tri: triangles){
-        for(int i=0; i<3; i++){
-            SubEdge sub = tri->getSubEdge(i);
-            if(edgeMap.count(sub)){
-                SubEdge &adj = edgeMap[sub];
-                adj.triangle->adjacentTriangles[adj.iLocal] = tri;
-                tri->adjacentTriangles[i]=adj.triangle;
+    void SurfaceMesh::smooth(int numIters){
+        rebuildIndices();
+        rebuildTriangleAdjacency();
+        for(auto v: nodes){
+            v->edit=0;
+        }
+
+        for(auto tri: triangles){
+            for(int i=0; i<3; i++){
+                if(tri->adjacentTriangles[i]==nullptr){
+                    tri->nodes[TriangleEdge[i][0]]->edit=1;
+                    tri->nodes[TriangleEdge[i][1]]->edit=1;
+                }
             }
-            else{
-                edgeMap[sub] = sub;
+        }
+        for(int iter=0; iter<numIters; iter++){
+            std::vector<Vector3D> positions(nodes.size(), {0,0,0} );
+            std::vector<double> connects(nodes.size(), 0);
+            for(auto tri: triangles){
+                for(int i=0; i<3; i++){
+                    positions[tri->nodes[TriangleEdge[i][0]]->index]+= tri->nodes[TriangleEdge[i][1]]->pos;
+                    connects[tri->nodes[TriangleEdge[i][0]]->index]+=1;
+                    positions[tri->nodes[TriangleEdge[i][1]]->index]+= tri->nodes[TriangleEdge[i][0]]->pos;
+                    connects[tri->nodes[TriangleEdge[i][0]]->index]+=1;
+                }
+            }
+            for(int i=0; i<nodes.size(); i++){
+                if(nodes[i]->edit) continue;
+                nodes[i]->pos = positions[i]/connects[i];
             }
         }
     }
-}
+    void SurfaceMesh::removeUnclosedMesh(){
+        rebuildTriangleAdjacency();
+        for (auto tri: triangles){
+            tri->edit  = 0;
+        }
+        for (auto node: nodes){
+            node->edit = 0;
+        }
+        int remove=0;
+        do{
+            remove=0;
+            for(auto tri: triangles){
+                if(tri->edit) continue;
+                for(int i=0; i<3; i++){
+                    if (tri->adjacentTriangles[i]==nullptr || tri->adjacentTriangles[i]->edit){
+                        tri->edit=1;
+                        remove++;
+                        break;
+                    }
+                }
+            }
+        }while(remove);
+        std::vector<Triangle*> removeTriangles;
+        for(auto tri: triangles){
+            if(tri->edit){
+                removeTriangles.push_back(tri);
+            }
+        }
+        deleteTriangles(removeTriangles);
+     
+    }
+
+    void SurfaceMesh::rebuildTriangleAdjacency(){
+        std::unordered_map<SubEdge, SubEdge, SubEdgeHasher, SubEdgeEqual> edgeMap;
+        for(auto tri: triangles){
+            tri->adjacentTriangles[0]=nullptr;
+            tri->adjacentTriangles[1]=nullptr;
+            tri->adjacentTriangles[2]=nullptr;
+        }
+        for(auto tri: triangles){
+            for(int i=0; i<3; i++){
+                SubEdge sub = tri->getSubEdge(i);
+                if(edgeMap.count(sub)){
+                    SubEdge &adj = edgeMap[sub];
+                    adj.triangle->adjacentTriangles[adj.iLocal] = tri;
+                    tri->adjacentTriangles[i]=adj.triangle;
+                }
+                else{
+                    edgeMap[sub] = sub;
+                }
+            }
+        }
+    }
 
 
 

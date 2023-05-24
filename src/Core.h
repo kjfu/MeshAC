@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:47
- * @LastEditTime: 2023-04-16 17:19:02
+ * @LastEditTime: 2023-05-24 10:05:28
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.h
@@ -57,7 +57,8 @@ namespace MeshAC{
     void generateMeshForContinuumRegion(
         SurfaceMesh &boundingBoxSurfaceMesh,
         SurfaceMesh &interfaceSurfaceMesh,
-        Mesh &resultingMesh
+        Mesh &resultingMesh,
+        bool hasHoles=true
     );
 
     void generateMeshForBlendRegion(
@@ -89,21 +90,23 @@ namespace MeshAC{
         SurfaceMesh &surfaceMesh,
         double top,
         double bottom,
-        std::vector<std::array<double, 2>> &topEdgeNodes,
-        std::vector<std::array<double, 2>> &bottomEdgeNodes,
+        std::vector<std::array<double, 3>> &topEdgeNodes,
+        std::vector<std::array<double, 3>> &bottomEdgeNodes,
         std::vector<std::array<int, 2>> &topEdges,
-        std::vector<std::array<int, 2>> &bottomEdges
+        std::vector<std::array<int, 2>> &bottomEdges,
+        double eps=1e-13
     );
 
     void generateBoundingBoxSurfaceMeshWithXYHoles(
         const Vector3D &lowerBound,
         const Vector3D &upperBound,
         double size,
-        std::vector<std::array<double, 2>> &topEdgeNodes,
-        std::vector<std::array<double, 2>> &bottomEdgeNodes,
+        std::vector<std::array<double, 3>> &topEdgeNodes,
+        std::vector<std::array<double, 3>> &bottomEdgeNodes,
         std::vector<std::array<int, 2>> &topEdges, 
         std::vector<std::array<int, 2>> &bottomEdges,
-        SurfaceMesh &resultingSurfaceMesh
+        SurfaceMesh &resultingSurfaceMesh,
+        bool hasHoles
     );
 
     void removeIntersectionElements(

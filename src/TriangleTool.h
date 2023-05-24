@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-14 09:56:34
- * @LastEditTime: 2023-04-16 17:16:27
+ * @LastEditTime: 2023-05-24 09:39:00
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/TriangleTool.h
@@ -25,7 +25,7 @@ namespace MeshAC{
         std::array<double, 2> maxPos, 
         std::array<double,2> minPos, 
         double size, 
-        std::vector<std::array<double,2>> &edgeNodes, std::vector<std::array<int, 2>> &edges
+        std::vector<std::array<double,3>> &edgeNodes, std::vector<std::array<int, 2>> &edges
     );
     
     /**
@@ -38,7 +38,7 @@ namespace MeshAC{
      * @param triOut 
      */
     void generateTRIANGULATEIOWithEdges(
-        std::vector<std::array<double,2>> &planeNodes, std::vector<std::array<int, 2>> &edges, std::vector<std::array<double,2>> holes, 
+        std::vector<std::array<double,3>> &planeNodes, std::vector<std::array<int, 2>> &edges, std::vector<std::array<double,3>> holes, 
         double maxAreaSize,  
         triangulateio &triOut
     );
@@ -56,5 +56,12 @@ namespace MeshAC{
      * @param io 
      */
     void setNullToTRIANGULATEIO(triangulateio &io);
+
+
+    void findHoles( std::vector<std::array<double,3>> &holeNodes, 
+    std::vector<std::array<int, 2>> &holeEdges, 
+    std::vector<std::vector<std::array<double,3>>> &innerLoopNodes,
+    std::vector<std::vector<std::array<int, 2>>> &innerLoopEdges,
+    std::vector<std::array<double,3>> &holes);
 
 }

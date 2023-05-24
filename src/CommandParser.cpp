@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-10 08:43:17
- * @LastEditTime: 2023-04-23 23:17:57
+ * @LastEditTime: 2023-05-23 22:06:55
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/CommandParser.cpp
@@ -25,6 +25,9 @@ namespace MeshAC{
             else if (str=="-hd"){
                 res.type = FT_GENERATION_FROM_EDGE_DISLOCATION_POINTS;
             }
+            // else if (str=="-dev"){
+            //     res.type = FT_GENERATION_DEV;
+            // }
             else if (str=="-i"){
                 i++;
                 res.input = std::string(argv[i]);

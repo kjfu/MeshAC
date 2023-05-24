@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:56
- * @LastEditTime: 2023-04-17 15:35:49
+ * @LastEditTime: 2023-05-24 10:15:51
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.cpp
@@ -41,9 +41,11 @@ namespace MeshAC{
         double tmp = fmax(dxyz[0], fmax(dxyz[1], dxyz[2]));
         size = size<1e-9 ? 0.1*tmp: size;
         generateBoundingBoxSurfaceMesh(lowerBound, upperBound, size, boundingBoxSurfaceMesh);
+        // boundingBoxSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case7_multi_holes/bd.vtk");
+        // interfaceSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case7_multi_holes/interface.vtk");
 
         generateMeshForContinuumRegion(boundingBoxSurfaceMesh, interfaceSurfaceMesh, continuumMesh);
-
+        
         //Output
         atomisticMesh.mergeMesh(continuumMesh, 1e-8);
         atomisticMesh.exportMESH(output);
@@ -76,17 +78,34 @@ namespace MeshAC{
         size = size<1e-9 ? 0.1*tmp: size;
 
         SurfaceMesh boundingBoxSurfaceMesh;
-        std::vector<std::array<double, 2>> topEdgeNodes;
-        std::vector<std::array<double, 2>> bottomEdgeNodes;
+        std::vector<std::array<double, 3>> topEdgeNodes;
+        std::vector<std::array<double, 3>> bottomEdgeNodes;
         std::vector<std::array<int, 2>> topEdges;
         std::vector<std::array<int, 2>> bottomEdges;
-        removeTopBottomTrianglesInSurfaceMesh(interfaceSurfaceMesh, upperBound[2], lowerBound[2], topEdgeNodes, bottomEdgeNodes, topEdges, bottomEdges);
-
-        generateBoundingBoxSurfaceMeshWithXYHoles(lowerBound, upperBound, size, topEdgeNodes, bottomEdgeNodes, topEdges, bottomEdges, boundingBoxSurfaceMesh);
+        tetgenmesh tetmesh;
+        std::vector<double> tetRadius;
+        double tmpCenter[3];
+        double radius;
+        for(auto &tet: atomisticMesh.tetrahedrons){
+            tet->edit = 0;
+            if(!tetmesh.circumsphere( tet->nodes[0]->pos.data(),tet->nodes[1]->pos.data(),tet->nodes[2]->pos.data(),tet->nodes[3]->pos.data(), tmpCenter, &radius)){
+                radius = std::numeric_limits<double>::max();
+            }
+            tetRadius.push_back(radius);
+        }
+        std::vector<double> tmpTetRadius = tetRadius;
+        std::sort(tmpTetRadius.begin(), tmpTetRadius.end());
+        double eps = tmpTetRadius[tetRadius.size()*0.2];
+        removeTopBottomTrianglesInSurfaceMesh(interfaceSurfaceMesh, upperBound[2], lowerBound[2], topEdgeNodes, bottomEdgeNodes, topEdges, bottomEdges, eps);
+        // interfaceSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case6_loop_max/interface.vtk");
+        bool hasHoles;
+        generateBoundingBoxSurfaceMeshWithXYHoles(lowerBound, upperBound, size, topEdgeNodes, bottomEdgeNodes, topEdges, bottomEdges, boundingBoxSurfaceMesh, hasHoles);
+        // boundingBoxSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case6_loop_max/bd_holes.vtk");
         generateMeshForContinuumRegion(
             boundingBoxSurfaceMesh,
             interfaceSurfaceMesh,
-            continuumMesh
+            continuumMesh,
+            hasHoles
         );
 
         //Output
@@ -210,7 +229,6 @@ namespace MeshAC{
 
         transportTETGENIOToMesh(atomisticOut, resultingMesh);
         resultingMesh.rebuildTetrahedronsAdjacency();
-
         std::unordered_map<Node*, Node*> oldNewNodes;
         auto getNode
         =[&oldNewNodes]
@@ -233,12 +251,14 @@ namespace MeshAC{
         double radius;
         for(auto &tet: resultingMesh.tetrahedrons){
             tet->edit = 0;
-            tetmesh.circumsphere( tet->nodes[0]->pos.data(),tet->nodes[1]->pos.data(),tet->nodes[2]->pos.data(),tet->nodes[3]->pos.data(), tmpCenter, &radius);
+            if(!tetmesh.circumsphere( tet->nodes[0]->pos.data(),tet->nodes[1]->pos.data(),tet->nodes[2]->pos.data(),tet->nodes[3]->pos.data(), tmpCenter, &radius)){
+                radius = std::numeric_limits<double>::max();
+            }
             tetRadius.push_back(radius);
         }
         std::vector<double> tmpTetRadius = tetRadius;
         std::sort(tmpTetRadius.begin(), tmpTetRadius.end());
-        double eps = tmpTetRadius[tetRadius.size()*0.5];
+        double eps = tmpTetRadius[tetRadius.size()*0.2];
 
         int removes=0;
         do{
@@ -287,7 +307,6 @@ namespace MeshAC{
 	    }
 
         resultingMesh.rebuildIndices();
-        
         interfaceMesh.rebuildIndices();
 
     }
@@ -295,16 +314,25 @@ namespace MeshAC{
     void generateMeshForContinuumRegion(
         SurfaceMesh &boundingBoxSurfaceMesh,
         SurfaceMesh &interfaceSurfaceMesh,
-        Mesh &resultingMesh
+        Mesh &resultingMesh,
+        bool hasHoles
     ){
-        int numNodesOfInterface = interfaceSurfaceMesh.nodes.size();
-
+        for(auto n : interfaceSurfaceMesh.nodes){
+            n->label = 2;
+        }
 
         std::vector<Vector3D> holeCenters;
 
-        interfaceSurfaceMesh.getSubRegionCenters(holeCenters);
+        if (hasHoles) interfaceSurfaceMesh.getSubRegionCenters(holeCenters);
 
         interfaceSurfaceMesh.mergeSurfaceMesh(boundingBoxSurfaceMesh, 1e-8);
+        interfaceSurfaceMesh.removeUnclosedMesh();
+        
+        int numNodesOfInterface = 0;
+        for(auto n: interfaceSurfaceMesh.nodes){
+            if(n->label==10) numNodesOfInterface++;
+        }
+
         int numNodesOfSurfaceMesh = interfaceSurfaceMesh.nodes.size();
         tetgenio in;
         tetgenio out;
@@ -313,13 +341,18 @@ namespace MeshAC{
 	    tetrahedralize(cmd, &in, &out);
 
         transportTETGENIOToMesh(out, resultingMesh);
-        for(int i=0; i<numNodesOfInterface; i++){
-            resultingMesh.nodes[i]->label = 2;
+        for(int i=0; i<interfaceSurfaceMesh.nodes.size(); i++){
+            if(interfaceSurfaceMesh.nodes[i]->label==2) {
+                resultingMesh.nodes[i]->label = 2;
+            }
+            else{
+                resultingMesh.nodes[i]->label = 1;
+            } 
         }
-        for(int i=numNodesOfInterface; i<numNodesOfSurfaceMesh; i++){
-            resultingMesh.nodes[i]->label = 1;
-        }
-        for( int i=numNodesOfSurfaceMesh; i<resultingMesh.nodes.size(); i++){
+        // for(int i=numNodesOfInterface; i<numNodesOfSurfaceMesh; i++){
+        //     resultingMesh.nodes[i]->label = 1;
+        // }
+        for( int i=interfaceSurfaceMesh.nodes.size(); i<resultingMesh.nodes.size(); i++){
             resultingMesh.nodes[i]->label = 3;
         }
         for(auto &tet: resultingMesh.tetrahedrons){
@@ -413,21 +446,21 @@ namespace MeshAC{
         std::vector<double> upperBound;
         innerInterfaceSurfaceMesh.getBoundingBox(lowerBound, upperBound);
 
-        std::vector<std::array<double, 2>> outerTopEdgeNodes;
-        std::vector<std::array<double, 2>> outerBottomEdgeNodes;
+        std::vector<std::array<double, 3>> outerTopEdgeNodes;
+        std::vector<std::array<double, 3>> outerBottomEdgeNodes;
         std::vector<std::array<int, 2>> outerTopEdges;
         std::vector<std::array<int, 2>> outerBottomEdges;
 
         removeTopBottomTrianglesInSurfaceMesh(outerInterfaceSurfaceMesh, upperBound[2], lowerBound[2], outerTopEdgeNodes, outerBottomEdgeNodes, outerTopEdges, outerBottomEdges);
 
-        std::vector<std::array<double, 2>> innerTopEdgeNodes;
-        std::vector<std::array<double, 2>> innerBottomEdgeNodes;
+        std::vector<std::array<double, 3>> innerTopEdgeNodes;
+        std::vector<std::array<double, 3>> innerBottomEdgeNodes;
         std::vector<std::array<int, 2>> innerTopEdges;
         std::vector<std::array<int, 2>> innerBottomEdges;
         removeTopBottomTrianglesInSurfaceMesh(innerInterfaceSurfaceMesh, upperBound[2], lowerBound[2], innerTopEdgeNodes, innerBottomEdgeNodes, innerTopEdges, innerBottomEdges);
 
-        std::vector<std::array<double,2>> topHoles;
-        std::array<double,2> topHole={0,0};
+        std::vector<std::array<double,3>> topHoles;
+        std::array<double,3> topHole={0,0,0};
         double topFactor = 1.0/ double(innerTopEdgeNodes.size());
         for(auto &n: innerTopEdgeNodes){
             topHole[0]+=topFactor*n[0];
@@ -448,8 +481,8 @@ namespace MeshAC{
         topSurfaceMesh.projectTRIANGULATEIO(topFacet, PROJECTION_TYPE::XY_PLANE, upperBound[2]);
         deleteTRIANGULATEIOAllocatedArrays(topFacet);
 
-        std::vector<std::array<double,2>> bottomHoles;
-        std::array<double,2> bottomHole={0,0};
+        std::vector<std::array<double,3>> bottomHoles;
+        std::array<double,3> bottomHole={0,0, 0};
         double bottomFactor = 1.0/ double(innerBottomEdges.size());
         for(auto &n: innerBottomEdgeNodes){
             bottomHole[0]+=bottomFactor*n[0];
@@ -482,10 +515,10 @@ namespace MeshAC{
         SurfaceMesh &resultingSurfaceMesh
     ){
         std::vector<std::array<int, 2>> bottomEdges;
-        std::vector<std::array<double, 2>> bottomEdgeNodes;
+        std::vector<std::array<double, 3>> bottomEdgeNodes;
 
         SurfaceMesh faceBottom, faceTop, faceFront, faceBack, faceLeft, faceRight;
-        std::vector<std::array<double,2>> holes;
+        std::vector<std::array<double,3>> holes;
         generateRectangleEdges({upperBound[0],upperBound[1]},{lowerBound[0], lowerBound[1]}, size, bottomEdgeNodes, bottomEdges);
 
         triangulateio triTopBottom;
@@ -529,11 +562,13 @@ namespace MeshAC{
         SurfaceMesh &surfaceMesh,
         double top,
         double bottom,
-        std::vector<std::array<double, 2>> &topEdgeNodes,
-        std::vector<std::array<double, 2>> &bottomEdgeNodes,
+        std::vector<std::array<double, 3>> &topEdgeNodes,
+        std::vector<std::array<double, 3>> &bottomEdgeNodes,
         std::vector<std::array<int, 2>> &topEdges,
-        std::vector<std::array<int, 2>> &bottomEdges
+        std::vector<std::array<int, 2>> &bottomEdges,
+        double eps
     ){
+
         surfaceMesh.rebuildTriangleAdjacency();
         std::unordered_map<int, int> topNodeMap;
         std::unordered_map<int, int> bottomNodeMap;
@@ -549,7 +584,7 @@ namespace MeshAC{
             else{
                 rst = topIndex++;
                 topNodeMap[index]  = rst;
-                topEdgeNodes.push_back({surfaceMesh.nodes[index]->pos[0], surfaceMesh.nodes[index]->pos[1]});
+                topEdgeNodes.push_back({surfaceMesh.nodes[index]->pos[0], surfaceMesh.nodes[index]->pos[1], surfaceMesh.nodes[index]->pos[2]});
             }
             return rst;
         };
@@ -563,16 +598,16 @@ namespace MeshAC{
             else{
                 rst = bottomIndex++;
                 bottomNodeMap[index]  = rst;
-                bottomEdgeNodes.push_back({surfaceMesh.nodes[index]->pos[0], surfaceMesh.nodes[index]->pos[1]});
+                bottomEdgeNodes.push_back({surfaceMesh.nodes[index]->pos[0], surfaceMesh.nodes[index]->pos[1], surfaceMesh.nodes[index]->pos[2]});
             }
             return rst;
         };
         
         for (auto &n: surfaceMesh.nodes){
-            if (abs(n->pos[2]-top)<1e-13){
+            if ((n->pos[2]+eps)>=top){
                 n->edit = 1;
             }
-            else if(abs(n->pos[2]-bottom)<1e-13){
+            else if((n->pos[2]-eps)<=bottom){
                 n->edit = 2;
             }
             else{
@@ -602,6 +637,7 @@ namespace MeshAC{
             }
         }
         for(auto &t: surfaceMesh.triangles){
+
             if (t->edit){
                 for(int i=0; i<3; i++){
                     Triangle *tt = t->adjacentTriangles[i];
@@ -624,36 +660,49 @@ namespace MeshAC{
         const Vector3D &lowerBound,
         const Vector3D &upperBound,
         double size,
-        std::vector<std::array<double, 2>> &topEdgeNodes,
-        std::vector<std::array<double, 2>> &bottomEdgeNodes,
+        std::vector<std::array<double, 3>> &topEdgeNodes,
+        std::vector<std::array<double, 3>> &bottomEdgeNodes,
         std::vector<std::array<int, 2>> &topEdges, 
         std::vector<std::array<int, 2>> &bottomEdges,
-        SurfaceMesh &resultingSurfaceMesh
+        SurfaceMesh &resultingSurfaceMesh,
+        bool hasHoles
+
     ){
+        hasHoles= true;
         SurfaceMesh faceBottom, faceTop, faceFront, faceBack, faceLeft, faceRight;
         std::array<double, 2> oxymax({upperBound[0], upperBound[1]});
         std::array<double, 2> oxymin({lowerBound[0], lowerBound[1]});
 
+        std::vector<std::array<double,3>> topHoles;
+        std::vector<std::array<double,3>> bottomHoles;
+        std::vector<std::vector<std::array<double,3>>> topInnerLoopNodes;
+        std::vector<std::vector<std::array<int, 2>>> topInnerLoopEdges;
+        std::vector<std::vector<std::array<double,3>>> bottomInnerLoopNodes;
+        std::vector<std::vector<std::array<int, 2>>> bottomInnerLoopEdges;
+        findHoles(topEdgeNodes, topEdges, topInnerLoopNodes, topInnerLoopEdges, topHoles);
+        findHoles(bottomEdgeNodes, bottomEdges, bottomInnerLoopNodes, bottomInnerLoopEdges, bottomHoles);
+        int nTop= topEdgeNodes.size();
+        int nBottom= bottomEdgeNodes.size();
+
+        // std::array<double,3> topHole={0,0,0};
+        // double topFactor = 1.0/ double(topEdgeNodes.size());
+        // for(auto &n: topEdgeNodes){
+        //     topHole[0]+=topFactor*n[0];
+        //     topHole[1]+=topFactor*n[1];
+        // }
+        // topHoles.push_back(topHole);
+
+
+        // std::array<double,3> bottomHole={0,0,0};
+        // double bottomFactor = 1.0/ double(bottomEdges.size());
+        // for(auto &n: bottomEdgeNodes){
+        //     bottomHole[0]+=bottomFactor*n[0];
+        //     bottomHole[1]+=bottomFactor*n[1];
+        // }
+        // bottomHoles.push_back(bottomHole);
+
         generateRectangleEdges({upperBound[0],upperBound[1]},{lowerBound[0], lowerBound[1]}, size, bottomEdgeNodes, bottomEdges);
         generateRectangleEdges({upperBound[0],upperBound[1]},{lowerBound[0], lowerBound[1]}, size, topEdgeNodes, topEdges);
-        std::vector<std::array<double,2>> topHoles;
-        std::array<double,2> topHole={0,0};
-        double topFactor = 1.0/ double(topEdgeNodes.size());
-        for(auto &n: topEdgeNodes){
-            topHole[0]+=topFactor*n[0];
-            topHole[1]+=topFactor*n[1];
-        }
-        topHoles.push_back(topHole);
-
-        std::vector<std::array<double,2>> bottomHoles;
-        std::array<double,2> bottomHole={0,0};
-        double bottomFactor = 1.0/ double(bottomEdges.size());
-        for(auto &n: bottomEdgeNodes){
-            bottomHole[0]+=bottomFactor*n[0];
-            bottomHole[1]+=bottomFactor*n[1];
-        }
-        bottomHoles.push_back(bottomHole);
-
         
         triangulateio triBottom;
         triangulateio triTop;	
@@ -664,8 +713,15 @@ namespace MeshAC{
         faceTop.projectTRIANGULATEIO(triTop, PROJECTION_TYPE::XY_PLANE, upperBound[2]);
         deleteTRIANGULATEIOAllocatedArrays(triBottom);
         deleteTRIANGULATEIOAllocatedArrays(triTop);
-
-        std::vector<std::array<double,2>> holes;
+        for(int i=0; i<nTop; i++){
+            faceTop.nodes[i]->pos[2] = topEdgeNodes[i][2];
+        }
+        faceTop.smooth(3);
+        for(int i=0; i<nBottom; i++){
+            faceBottom.nodes[i]->pos[2] = bottomEdgeNodes[i][2];
+        }
+        faceBottom.smooth(3);
+        std::vector<std::array<double,3>> holes;
         bottomEdgeNodes.clear();
         bottomEdges.clear();
         generateRectangleEdges({upperBound[1], upperBound[2]}, {lowerBound[1],lowerBound[2]}, size, bottomEdgeNodes, bottomEdges);
@@ -703,6 +759,40 @@ namespace MeshAC{
         resultingSurfaceMesh.mergeSurfaceMesh(faceBack, 1e-8);
         resultingSurfaceMesh.mergeSurfaceMesh(faceTop, 1e-8);
         resultingSurfaceMesh.mergeSurfaceMesh(faceBottom, 1e-8);
+
+        if (topInnerLoopNodes.size()){
+            hasHoles = false;
+            std::vector<std::array<double,3>> tmpHoles;
+            for(int i = 0; i < topInnerLoopNodes.size(); i++){
+                triangulateio tmp;
+                generateTRIANGULATEIOWithEdges(topInnerLoopNodes[i], topInnerLoopEdges[i], tmpHoles, size*size/2, tmp);
+                SurfaceMesh tmpSurfaceMesh;
+                tmpSurfaceMesh.projectTRIANGULATEIO(tmp, PROJECTION_TYPE::XY_PLANE, upperBound[2]);
+                
+                for(int j=0; j<topInnerLoopNodes[i].size(); j++){
+                    tmpSurfaceMesh.nodes[j]->pos[2] = topInnerLoopNodes[i][j][2];
+                }
+                tmpSurfaceMesh.smooth(3);
+                resultingSurfaceMesh.mergeSurfaceMesh(tmpSurfaceMesh, 1e-8);
+            }
+
+        }
+        if (bottomInnerLoopNodes.size()){
+            hasHoles = false;
+            std::vector<std::array<double,3>> tmpHoles;
+            for(int i = 0; i < bottomInnerLoopNodes.size(); i++){
+                triangulateio tmp;
+                generateTRIANGULATEIOWithEdges(bottomInnerLoopNodes[i], bottomInnerLoopEdges[i], tmpHoles, size*size/2, tmp);
+                SurfaceMesh tmpSurfaceMesh;
+                tmpSurfaceMesh.projectTRIANGULATEIO(tmp, PROJECTION_TYPE::XY_PLANE, lowerBound[2]);
+                
+                for(int j=0; j<bottomInnerLoopNodes[i].size(); j++){
+                    tmpSurfaceMesh.nodes[j]->pos[2] = bottomInnerLoopNodes[i][j][2];
+                }
+                tmpSurfaceMesh.smooth(3);
+                resultingSurfaceMesh.mergeSurfaceMesh(tmpSurfaceMesh, 1e-8);
+            }
+        }
     }
 
     void removeIntersectionElements(
