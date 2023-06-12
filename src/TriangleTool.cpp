@@ -5,6 +5,53 @@
 #include <unordered_set>
 #include <functional>
 namespace MeshAC{
+
+    void generateRectangleEdgesWithDifferentSize(
+        std::array<double, 2> maxPos, 
+        std::array<double,2> minPos, 
+        double leftsize, 
+        double rightsize,
+        double topSize,
+        double bottomSize,
+        std::vector<std::array<double,3>> &edgeNodes, std::vector<std::array<int, 2>> &edges
+    ){
+        int basebase = edgeNodes.size();
+        int base = edgeNodes.size();
+        double dx = maxPos[0]-minPos[0];
+        double dy = maxPos[1]-minPos[1];
+        int numSegmentsX = std::fmax(1, dx/bottomSize);
+        numSegmentsX = numSegmentsX%2 ? numSegmentsX: numSegmentsX+1;
+        for(int i=0; i<numSegmentsX; i++){
+            edgeNodes.push_back({ minPos[0] + dx/double(numSegmentsX)*i, minPos[1], 0});
+            edges.push_back({base+i, base+i+1});
+        }
+        base = edgeNodes.size();
+        int numSegmentsY = std::fmax(1, dy/rightsize);
+        numSegmentsY = numSegmentsY%2 ? numSegmentsY: numSegmentsY+1;
+        for(int i=0; i<numSegmentsY; i++){
+            edgeNodes.push_back({ maxPos[0], minPos[1]+dy/double(numSegmentsY)*i, 0});
+            edges.push_back({base+i, base+i+1});
+        }	
+        base = edgeNodes.size();
+        numSegmentsX = std::fmax(1, dx/topSize);
+        numSegmentsX = numSegmentsX%2 ? numSegmentsX: numSegmentsX+1;
+        for(int i=0; i<numSegmentsX; i++){
+            edgeNodes.push_back({ maxPos[0] - dx/double(numSegmentsX)*i, maxPos[1], 0});
+            edges.push_back({base+i, base+i+1});
+        }
+        base = edgeNodes.size();
+
+        numSegmentsY = std::fmax(1, dy/leftsize);
+        numSegmentsY = numSegmentsY%2 ? numSegmentsY: numSegmentsY+1;
+        for(int i=0; i<numSegmentsY; i++){
+            edgeNodes.push_back({ minPos[0], maxPos[1]-dy/double(numSegmentsY)*i, 0});
+            edges.push_back({base+i, base+i+1});
+        }
+        edges.back()[1] = basebase;
+    }
+
+
+
     void generateRectangleEdges(
         std::array<double, 2> maxPos, 
         std::array<double,2> minPos, 
@@ -17,6 +64,8 @@ namespace MeshAC{
         double dy = maxPos[1]-minPos[1];
         int numSegmentsX = std::fmax(1, dx/size);
         int numSegmentsY = std::fmax(1, dy/size);
+        numSegmentsX = numSegmentsX%2 ? numSegmentsX: numSegmentsX+1;
+        numSegmentsY = numSegmentsY%2 ? numSegmentsY: numSegmentsY+1;
         for(int i=0; i<numSegmentsX; i++){
             edgeNodes.push_back({ minPos[0] + dx/double(numSegmentsX)*i, minPos[1], 0});
             edges.push_back({base+i, base+i+1});

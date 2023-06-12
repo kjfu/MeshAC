@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-06 01:09:07
- * @LastEditTime: 2023-05-21 11:09:52
+ * @LastEditTime: 2023-06-04 22:35:46
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/main.cpp
@@ -30,6 +30,9 @@ int main(int argc, char *argv[]){
 	}
 	else if (info.type == FT_GENERATION_FROM_EDGE_DISLOCATION_POINTS){
 		generateMeshFromEdgeDislocationPoints(info.input, info.output, info.size);
+	}
+	else if (info.type == FT_GENERATION_THREE_LAYER){
+		generateMeshFromThreeLayer(info.input, info.output, info.size);
 	}
 	else if (info.type == FT_ADAPTIVE_REFINEMENT){
 		adaptiveRefineMesh(info.input, info.output);

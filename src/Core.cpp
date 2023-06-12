@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:56
- * @LastEditTime: 2023-05-24 10:15:51
+ * @LastEditTime: 2023-06-12 17:05:17
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.cpp
@@ -29,6 +29,15 @@ namespace MeshAC{
         //Step 1: Generate sub-mesh for atomistic region
         Mesh atomisticMesh;
         SurfaceMesh interfaceSurfaceMesh;
+        if(aPointSet.subsets[CONTINUUM_POINT].size()>8){
+            generateMeshWholeDomain(aPointSet.subsets[ATOMISTIC_POINT], aPointSet.subsets[CONTINUUM_POINT], atomisticMesh);
+            //Output
+            atomisticMesh.exportMESH(output);
+            atomisticMesh.exportVTK(output+".vtk");
+            return;
+        }
+
+
         generateMeshForAtomisticRegion(aPointSet.subsets[ATOMISTIC_POINT], atomisticMesh, interfaceSurfaceMesh);
 
         //Step 2: Generate sub-mesh for continuum region
@@ -97,10 +106,11 @@ namespace MeshAC{
         std::sort(tmpTetRadius.begin(), tmpTetRadius.end());
         double eps = tmpTetRadius[tetRadius.size()*0.2];
         removeTopBottomTrianglesInSurfaceMesh(interfaceSurfaceMesh, upperBound[2], lowerBound[2], topEdgeNodes, bottomEdgeNodes, topEdges, bottomEdges, eps);
-        // interfaceSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case6_loop_max/interface.vtk");
+        // atomisticMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case9_timo_new/atomisticMesh.vtk");
+        // interfaceSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case8_timo/interface.vtk");
         bool hasHoles;
         generateBoundingBoxSurfaceMeshWithXYHoles(lowerBound, upperBound, size, topEdgeNodes, bottomEdgeNodes, topEdges, bottomEdges, boundingBoxSurfaceMesh, hasHoles);
-        // boundingBoxSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case6_loop_max/bd_holes.vtk");
+        // boundingBoxSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case8_timo/bd_holes.vtk");
         generateMeshForContinuumRegion(
             boundingBoxSurfaceMesh,
             interfaceSurfaceMesh,
@@ -113,6 +123,69 @@ namespace MeshAC{
         atomisticMesh.exportMESH(output);
         atomisticMesh.exportVTK(output+".vtk");
     }
+
+    void generateMeshFromThreeLayer(
+        const std::string &input, 
+        const std::string &output, 
+        double size
+    ){
+        //Input
+        PointSet aPointSet;
+        aPointSet.loadPointSet(input);
+
+        //Step 1: Generate sub-mesh for atomistic region
+        Mesh atomisticMesh;
+        SurfaceMesh interfaceSurfaceMesh;
+        Vector3D atomisticUpperBound;
+        Vector3D atomisticLowerBound;
+        double innerSize;
+        generateMeshForAtomisticRegionInThreeLayerConfiguration(
+            aPointSet.subsets[ATOMISTIC_POINT], 
+            atomisticMesh, 
+            interfaceSurfaceMesh,
+            atomisticLowerBound,
+            atomisticUpperBound,
+            innerSize);
+        // atomisticMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case9_timo_new/atomisticMesh_test.vtk");
+        // interfaceSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case9_timo_new/interface_test.vtk");
+
+        //Step 2: Generate sub-mesh for continuum region
+        Mesh continuumMesh;
+        Vector3D upperBound;
+        Vector3D lowerBound;
+
+        aPointSet.calculateSubsetBoundingBox(CONTINUUM_POINT, lowerBound, upperBound);
+
+        Vector3D dxyz=upperBound-lowerBound;
+        double tmp = fmax(dxyz[0], fmax(dxyz[1], dxyz[2]));
+        size = size<1e-9 ? 0.1*tmp: size;
+
+        SurfaceMesh boundingBoxSurfaceMesh;
+
+        generateBoundingBoxSurfaceMeshInThreeLayerConfiguration(
+            lowerBound, 
+            upperBound,
+            atomisticLowerBound,
+            atomisticUpperBound,
+            size,
+            innerSize,
+            boundingBoxSurfaceMesh
+        );
+
+        // boundingBoxSurfaceMesh.exportVTK("/home/kjfu/research/MeshAC/tmp/case6_loop_max/bd_holes.vtk");
+        generateMeshForContinuumRegion(
+            boundingBoxSurfaceMesh,
+            interfaceSurfaceMesh,
+            continuumMesh,
+            false
+        );
+
+        //Output
+        atomisticMesh.mergeMesh(continuumMesh, 1e-8);
+        atomisticMesh.exportMESH(output);
+        atomisticMesh.exportVTK(output+".vtk");
+    }
+
 
     void adaptiveRefineMesh(
         const std::string &input,
@@ -213,12 +286,315 @@ namespace MeshAC{
         goalMesh.exportVTK(output+".vtk");        
     }
 
+    void generateMeshWholeDomain(
+        const std::vector<Vector3D> &atomPoints,
+        const std::vector<Vector3D> &continnumPoints,
+        Mesh &resultingMesh,
+        bool keepConvexHull
+    ){
+        std::vector<Vector3D> points = continnumPoints;
+        for(auto &p: atomPoints){
+            points.push_back(p);
+        }
 
+        tetgenio atomisticIn;
+        tetgenio atomisticOut;
+        transportPointsToTETGENIO(points, ATOMISTIC_POINT, atomisticIn);
+        for(int i = 0; i < continnumPoints.size(); i++){
+            atomisticIn.pointmarkerlist[i] = CONTINUUM_POINT;
+        }
+
+        char cmd[] = "Q";
+	    tetrahedralize(cmd, &atomisticIn, &atomisticOut);
+
+        transportTETGENIOToMesh(atomisticOut, resultingMesh, 1);
+        resultingMesh.rebuildTetrahedronsAdjacency();
+        std::unordered_map<Node*, Node*> oldNewNodes;
+        auto getNode
+        =[&oldNewNodes]
+        (Node* n){
+            Node* rst =nullptr;
+            if(oldNewNodes.find(n)!=oldNewNodes.end()){
+                rst = oldNewNodes[n];
+            }
+            else{
+                rst = new Node(n->pos);
+                rst->label = n->label;
+                oldNewNodes[n] = rst;
+            }
+            return rst;
+        };
+
+        std::vector<double> tetRadius;
+        tetgenmesh tetmesh;
+        double tmpCenter[3];
+        double radius;
+        for(auto &tet: resultingMesh.tetrahedrons){
+            tet->edit = 0;
+            if(!tetmesh.circumsphere( tet->nodes[0]->pos.data(),tet->nodes[1]->pos.data(),tet->nodes[2]->pos.data(),tet->nodes[3]->pos.data(), tmpCenter, &radius)){
+                radius = std::numeric_limits<double>::max();
+            }
+            tetRadius.push_back(radius);
+        }
+        std::vector<double> tmpTetRadius = tetRadius;
+        std::sort(tmpTetRadius.begin(), tmpTetRadius.end());
+        double eps = tmpTetRadius[tetRadius.size()*0.2];
+
+        if(!keepConvexHull){
+            int removes=0;
+            do{
+                removes=0;
+                for(int i = 0; i <resultingMesh.tetrahedrons.size(); i++){
+                    if (resultingMesh.tetrahedrons[i]->edit) continue;
+                    bool isBorder = false;
+                    for (int j = 0; j < 4; j++){
+                        if (resultingMesh.tetrahedrons[i]->adjacentTetrahedrons[j]==nullptr || resultingMesh.tetrahedrons[i]->adjacentTetrahedrons[j]->edit){
+                            isBorder = true;
+                            break;
+                        }
+                    }
+                    if (isBorder){
+                        if (tetRadius[i]>4*eps){
+                            resultingMesh.tetrahedrons[i]->edit = 1;
+                            removes++;
+                        }
+                    }
+                }
+            }while(removes);
+        }
+
+        // for(auto &e: resultingMesh.tetrahedrons){
+        //     if(e->edit) continue;
+        //     for(int i=0; i<4; i++){
+        //         if (e->adjacentTetrahedrons[i]==nullptr || e->adjacentTetrahedrons[i]->edit){
+        //             e->nodes[(i+1)%4]->label = ATOMISTIC_BORDER_POINT;
+        //             e->nodes[(i+2)%4]->label = ATOMISTIC_BORDER_POINT;
+        //             e->nodes[(i+3)%4]->label = ATOMISTIC_BORDER_POINT;
+        //         }
+        //     }
+        // }
+
+        for(int i=0; i<resultingMesh.tetrahedrons.size(); i++){
+            if (resultingMesh.tetrahedrons[i]->edit){
+                delete resultingMesh.tetrahedrons[i];
+                resultingMesh.tetrahedrons[i]=resultingMesh.tetrahedrons.back();
+                resultingMesh.tetrahedrons.pop_back();
+                i--;
+            }
+	    }
+
+        resultingMesh.rebuildTetrahedronsAdjacency();
+        for(auto &tet: resultingMesh.tetrahedrons){
+            tet->label = CONTINUUM_TET;
+            if (tet->nodes[0]->label==ATOMISTIC_POINT 
+            &&  tet->nodes[1]->label==ATOMISTIC_POINT
+            &&  tet->nodes[2]->label==ATOMISTIC_POINT
+            &&  tet->nodes[3]->label==ATOMISTIC_POINT){
+                tet->label = ATOMISTIC_TET;
+            }
+        }
+
+        for(auto &tet: resultingMesh.tetrahedrons){
+            for(int i=0; i<4; i++){
+                if(tet->adjacentTetrahedrons[i]==nullptr){
+                    tet->nodes[TetrahedronFacet[i][0]]->label = CONTINUUM_OUT_BORDER_POINT;
+                    tet->nodes[TetrahedronFacet[i][1]]->label = CONTINUUM_OUT_BORDER_POINT;
+                    tet->nodes[TetrahedronFacet[i][2]]->label = CONTINUUM_OUT_BORDER_POINT;
+                }
+            }
+        }
+
+        for(auto &tet: resultingMesh.tetrahedrons){
+            for(int i=0; i<4; i++){
+                if(tet->label==ATOMISTIC_TET && 
+                (tet->adjacentTetrahedrons[i]==nullptr || tet->adjacentTetrahedrons[i]->label==CONTINUUM_TET)){
+                    tet->nodes[TetrahedronFacet[i][0]]->label = ATOMISTIC_BORDER_POINT;
+                    tet->nodes[TetrahedronFacet[i][1]]->label = ATOMISTIC_BORDER_POINT;
+                    tet->nodes[TetrahedronFacet[i][2]]->label = ATOMISTIC_BORDER_POINT;
+                }
+            }
+        }                                   
+
+        resultingMesh.rebuildIndices();
+    }
+
+    void generateMeshForAtomisticRegionInThreeLayerConfiguration(
+        const std::vector<Vector3D> &points,
+        Mesh &resultingMesh,
+        SurfaceMesh &interfaceMesh,
+        Vector3D &lowerBound,
+        Vector3D &upperBound,
+        double &innerSize
+    ){
+        Mesh resultingMesh_tmp;
+        tetgenio atomisticIn_tmp;
+        tetgenio atomisticOut_tmp;
+        tetgenio atomisticIn;
+        tetgenio atomisticOut;
+        transportPointsToTETGENIO(points, ATOMISTIC_POINT, atomisticIn_tmp);
+
+        lowerBound.initialize(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+        upperBound.initialize(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), std::numeric_limits<double>::min());
+        for(auto &v: points){
+            for(int i=0; i<3; i++){
+                lowerBound[i] = fmin(lowerBound[i], v[i]);
+                upperBound[i] = fmax(upperBound[i], v[i]);
+            }
+        }
+
+
+        char cmd[] = "Q";
+	    tetrahedralize(cmd, &atomisticIn_tmp, &atomisticOut_tmp);
+
+        transportTETGENIOToMesh(atomisticOut_tmp, resultingMesh_tmp);
+
+        std::vector<double> tetRadius;
+        tetgenmesh tetmesh;
+        double tmpCenter[3];
+        double radius;
+        for(auto &tet: resultingMesh_tmp.tetrahedrons){
+            tet->edit = 0;
+            if(!tetmesh.circumsphere( tet->nodes[0]->pos.data(),tet->nodes[1]->pos.data(),tet->nodes[2]->pos.data(),tet->nodes[3]->pos.data(), tmpCenter, &radius)){
+                radius = std::numeric_limits<double>::max();
+            }
+            tetRadius.push_back(radius);
+        }
+        std::vector<double> tmpTetRadius = tetRadius;
+        std::sort(tmpTetRadius.begin(), tmpTetRadius.end());
+        double eps = tmpTetRadius[tetRadius.size()*0.2];
+        innerSize = eps*2;
+        double dz = upperBound[2]-lowerBound[2];
+        double dx = upperBound[0]-lowerBound[0];
+        int numSegmentsZ = std::fmax(1, dz/innerSize);
+        int numSegmentsX = std::fmax(1, dx/innerSize);
+        numSegmentsZ = numSegmentsZ%2 ? numSegmentsZ: numSegmentsZ+1;
+        numSegmentsX = numSegmentsX%2 ? numSegmentsX: numSegmentsX+1;
+        lowerBound[1]-=1.5*eps;
+        upperBound[1]+=1.5*eps;
+        
+        int numAddPoints=(numSegmentsX+1)*(numSegmentsZ+1)*2;
+        std::vector<Vector3D> finalPoints = points;
+        for(int i=0; i<=numSegmentsX; i++){
+            for(int j=0; j<=numSegmentsZ; j++){
+                finalPoints.push_back({lowerBound[0] + dx/double(numSegmentsX)*i, lowerBound[1], lowerBound[2] + dz/double(numSegmentsZ)*j});
+                
+                finalPoints.push_back({lowerBound[0] + dx/double(numSegmentsX)*i, upperBound[1], lowerBound[2] + dz/double(numSegmentsZ)*j});
+            }
+        }
+        transportPointsToTETGENIO(finalPoints, ATOMISTIC_POINT, atomisticIn);
+        for(int i=points.size(); i<points.size()+numAddPoints; i++){
+            atomisticIn.pointmarkerlist[i] = CONTINUUM_POINT;
+        }
+
+	    tetrahedralize(cmd, &atomisticIn, &atomisticOut);
+
+        transportTETGENIOToMesh(atomisticOut, resultingMesh, 1);
+
+
+        resultingMesh.rebuildTetrahedronsAdjacency();
+        std::unordered_map<Node*, Node*> oldNewNodes;
+        auto getNode
+        =[&oldNewNodes]
+        (Node* n){
+            Node* rst =nullptr;
+            if(oldNewNodes.find(n)!=oldNewNodes.end()){
+                rst = oldNewNodes[n];
+            }
+            else{
+                rst = new Node(n->pos);
+                rst->label = n->label;
+                oldNewNodes[n] = rst;
+            }
+            return rst;
+        };
+
+        for(auto &e: resultingMesh.tetrahedrons){
+            e->edit = 0;
+            if(e->nodes[0]->label==ATOMISTIC_POINT 
+            && e->nodes[1]->label==ATOMISTIC_POINT 
+            && e->nodes[2]->label==ATOMISTIC_POINT
+            && e->nodes[3]->label==ATOMISTIC_POINT){
+                e->label=ATOMISTIC_TET;
+            }
+            else{
+                e->label=CONTINUUM_TET;
+            }
+        }
+
+        tetRadius.clear();
+        for(auto &tet: resultingMesh.tetrahedrons){
+            tet->edit = 0;
+            if(!tetmesh.circumsphere( tet->nodes[0]->pos.data(),tet->nodes[1]->pos.data(),tet->nodes[2]->pos.data(),tet->nodes[3]->pos.data(), tmpCenter, &radius)){
+                radius = std::numeric_limits<double>::max();
+            }
+            tetRadius.push_back(radius);
+        }
+        int removes=0;
+        do{
+            removes=0;
+            for(int i = 0; i <resultingMesh.tetrahedrons.size(); i++){
+                if (resultingMesh.tetrahedrons[i]->edit) continue;
+                bool isBorder = false;
+                for (int j = 0; j < 4; j++){
+                    if (resultingMesh.tetrahedrons[i]->adjacentTetrahedrons[j]==nullptr || resultingMesh.tetrahedrons[i]->adjacentTetrahedrons[j]->edit){
+                        isBorder = true;
+                        break;
+                    }
+                }
+                if (isBorder){
+                    if (tetRadius[i]>5*eps){
+                        resultingMesh.tetrahedrons[i]->edit = 1;
+                        removes++;
+                    }
+                }
+            }
+        }while(removes);                                                        
+
+        for(int i=0; i<resultingMesh.tetrahedrons.size(); i++){
+            if (resultingMesh.tetrahedrons[i]->edit){
+                delete resultingMesh.tetrahedrons[i];
+                resultingMesh.tetrahedrons[i]=resultingMesh.tetrahedrons.back();
+                resultingMesh.tetrahedrons.pop_back();
+                i--;
+            }
+	    }
+        resultingMesh.rebuildTetrahedronsAdjacency();
+        for(auto &e: resultingMesh.tetrahedrons){
+            if(e->label==ATOMISTIC_TET){
+                for(int i=0; i<4; i++){
+                    if (e->adjacentTetrahedrons[i]==nullptr || e->adjacentTetrahedrons[i]->label==CONTINUUM_TET){
+                        e->nodes[(i+1)%4]->label = ATOMISTIC_BORDER_POINT;
+                        e->nodes[(i+2)%4]->label = ATOMISTIC_BORDER_POINT;
+                        e->nodes[(i+3)%4]->label = ATOMISTIC_BORDER_POINT;
+                    }
+                }
+            }
+            else{
+                for(int i=0; i<4; i++){
+                    if (e->nodes[(i+1)%4]->label == CONTINUUM_POINT &&
+                        e->nodes[(i+2)%4]->label == CONTINUUM_POINT &&
+                        e->nodes[(i+3)%4]->label == CONTINUUM_POINT){
+                        interfaceMesh.addTriangle(getNode(e->nodes[(i+1)%4]), getNode(e->nodes[(i+2)%4]), getNode(e->nodes[(i+3)%4]));
+                    }
+                }
+            }
+        }
+
+        for(auto &n: oldNewNodes){
+            interfaceMesh.nodes.push_back(n.second);
+        }
+
+
+        resultingMesh.rebuildIndices();
+        interfaceMesh.rebuildIndices();
+
+    }
 
     void generateMeshForAtomisticRegion(
         const std::vector<Vector3D> &points,
         Mesh &resultingMesh,
-        SurfaceMesh &interfaceMesh
+        SurfaceMesh &interfaceMesh,
+        bool keepConvexHull
     ){
         tetgenio atomisticIn;
         tetgenio atomisticOut;
@@ -260,26 +636,28 @@ namespace MeshAC{
         std::sort(tmpTetRadius.begin(), tmpTetRadius.end());
         double eps = tmpTetRadius[tetRadius.size()*0.2];
 
-        int removes=0;
-        do{
-            removes=0;
-            for(int i = 0; i <resultingMesh.tetrahedrons.size(); i++){
-                if (resultingMesh.tetrahedrons[i]->edit) continue;
-                bool isBorder = false;
-                for (int j = 0; j < 4; j++){
-                    if (resultingMesh.tetrahedrons[i]->adjacentTetrahedrons[j]==nullptr || resultingMesh.tetrahedrons[i]->adjacentTetrahedrons[j]->edit){
-                        isBorder = true;
-                        break;
+        if(!keepConvexHull){
+            int removes=0;
+            do{
+                removes=0;
+                for(int i = 0; i <resultingMesh.tetrahedrons.size(); i++){
+                    if (resultingMesh.tetrahedrons[i]->edit) continue;
+                    bool isBorder = false;
+                    for (int j = 0; j < 4; j++){
+                        if (resultingMesh.tetrahedrons[i]->adjacentTetrahedrons[j]==nullptr || resultingMesh.tetrahedrons[i]->adjacentTetrahedrons[j]->edit){
+                            isBorder = true;
+                            break;
+                        }
+                    }
+                    if (isBorder){
+                        if (tetRadius[i]>3*eps){
+                            resultingMesh.tetrahedrons[i]->edit = 1;
+                            removes++;
+                        }
                     }
                 }
-                if (isBorder){
-                    if (tetRadius[i]>2*eps){
-                        resultingMesh.tetrahedrons[i]->edit = 1;
-                        removes++;
-                    }
-                }
-            }
-        }while(removes);
+            }while(removes);
+        }
 
         for(auto &e: resultingMesh.tetrahedrons){
             if(e->edit) continue;
@@ -654,6 +1032,207 @@ namespace MeshAC{
             }
         }
         surfaceMesh.deleteTriangles(delTriangles);
+    }
+
+    void extractTopBottomTrianglesInSurfaceMesh(
+        SurfaceMesh &surfaceMesh,
+        double top,
+        double bottom,
+        std::vector<std::array<double, 3>> &topEdgeNodes,
+        std::vector<std::array<double, 3>> &bottomEdgeNodes,
+        std::vector<std::array<int, 2>> &topEdges,
+        std::vector<std::array<int, 2>> &bottomEdges,
+        double eps
+    ){
+
+        surfaceMesh.rebuildTriangleAdjacency();
+        std::unordered_map<int, int> topNodeMap;
+        std::unordered_map<int, int> bottomNodeMap;
+        int topIndex = 0;
+        int bottomIndex = 0;
+        auto getTopNode =
+        [&surfaceMesh, &topEdgeNodes, &topNodeMap, &topIndex]
+        (int index){
+            int rst = 0;
+            if(topNodeMap.count(index)){
+                rst = topNodeMap[index];
+            }
+            else{
+                rst = topIndex++;
+                topNodeMap[index]  = rst;
+                topEdgeNodes.push_back({surfaceMesh.nodes[index]->pos[0], surfaceMesh.nodes[index]->pos[1], surfaceMesh.nodes[index]->pos[2]});
+            }
+            return rst;
+        };
+        auto getBottomNode =
+        [&surfaceMesh, &bottomEdgeNodes, &bottomNodeMap, &bottomIndex]
+        (int index){
+            int rst = 0;
+            if(bottomNodeMap.count(index)){
+                rst = bottomNodeMap[index];
+            }
+            else{
+                rst = bottomIndex++;
+                bottomNodeMap[index]  = rst;
+                bottomEdgeNodes.push_back({surfaceMesh.nodes[index]->pos[0], surfaceMesh.nodes[index]->pos[1], surfaceMesh.nodes[index]->pos[2]});
+            }
+            return rst;
+        };
+        
+        for (auto &n: surfaceMesh.nodes){
+            if ((n->pos[2]+eps)>=top){
+                n->edit = 1;
+            }
+            else if((n->pos[2]-eps)<=bottom){
+                n->edit = 2;
+            }
+            else{
+                n->edit = 0;
+            }
+        }
+        std::vector<Triangle *> delTriangles;
+        for (auto &t: surfaceMesh.triangles){
+            int count1 = 0;
+            int count2 = 0;
+            t->edit = 0;
+            for(auto n: t->nodes){
+                if (n->edit==1){
+                    count1++;
+                }
+                else if(n->edit==2){
+                    count2++;
+                }
+            }
+            if(count1==3){
+                t->edit = 1;
+            }
+            else if (count2==3){
+                t->edit = 2;
+            }
+            else{
+                delTriangles.push_back(t);                
+            }
+        }
+        for(auto &t: surfaceMesh.triangles){
+
+            if (t->edit){
+                for(int i=0; i<3; i++){
+                    Triangle *tt = t->adjacentTriangles[i];
+                    if (tt->edit==0){
+
+                        if (t->edit==1){
+                            topEdges.push_back({getTopNode(t->nodes[(i+1)%3]->index), getTopNode(t->nodes[(i+2)%3]->index)});
+                        }
+                        else{
+                            bottomEdges.push_back({getBottomNode(t->nodes[(i+1)%3]->index), getBottomNode(t->nodes[(i+2)%3]->index)});						
+                        }
+                    }
+                }			
+            }
+        }
+        surfaceMesh.deleteTriangles(delTriangles);
+    }
+
+    void generateBoundingBoxSurfaceMeshInThreeLayerConfiguration(
+        const Vector3D &OuterLowerBound,
+        const Vector3D &OuterUpperBound,
+        const Vector3D &InnerLowerBound,
+        const Vector3D &InnerUpperBound,
+        double outerSize,
+        double innerSize,
+        SurfaceMesh &resultingSurfaceMesh
+    ){
+        SurfaceMesh faceLeft, faceRight;
+
+        std::vector<std::array<double, 3>> edgeNodes;
+        std::vector<std::array<int, 2>> edges;
+        generateRectangleEdges({OuterUpperBound[2], OuterUpperBound[0]}, {OuterLowerBound[2],OuterLowerBound[0]}, outerSize, edgeNodes, edges);
+        triangulateio triLeftRight;	
+        std::vector<std::array<double,3>> holes;
+        generateTRIANGULATEIOWithEdges(edgeNodes, edges, holes, outerSize*outerSize/2, triLeftRight);
+        faceRight.projectTRIANGULATEIO(triLeftRight, PROJECTION_TYPE::ZX_PLANE, OuterUpperBound[1]);
+        faceLeft.projectTRIANGULATEIO(triLeftRight, PROJECTION_TYPE::ZX_PLANE, OuterLowerBound[1]);
+        deleteTRIANGULATEIOAllocatedArrays(triLeftRight);
+        
+        // left side
+        edgeNodes.clear();
+        edges.clear();
+        SurfaceMesh faceBottom1, faceTop1, faceFront1, faceBack1;
+
+        edgeNodes.clear();
+        edges.clear();
+        generateRectangleEdgesWithDifferentSize({InnerLowerBound[1], InnerUpperBound[2]},{OuterLowerBound[1],OuterLowerBound[2]}, 
+        outerSize,
+        innerSize, 
+        0.5*(outerSize+innerSize), 
+        0.5*(outerSize+innerSize), edgeNodes, edges);
+
+        triangulateio triFrontBack;	
+        generateTRIANGULATEIOWithEdges(edgeNodes, edges, holes, outerSize*outerSize/2, triFrontBack);
+        faceFront1.projectTRIANGULATEIO(triFrontBack, PROJECTION_TYPE::YZ_PLANE, OuterUpperBound[0]);
+        faceBack1.projectTRIANGULATEIO(triFrontBack, PROJECTION_TYPE::YZ_PLANE, OuterLowerBound[0]);
+        deleteTRIANGULATEIOAllocatedArrays(triFrontBack);
+        
+        edgeNodes.clear();
+        edges.clear();
+        generateRectangleEdgesWithDifferentSize({InnerUpperBound[0], InnerLowerBound[1]},{OuterLowerBound[0], OuterLowerBound[1]},
+        0.5*(outerSize+innerSize), 
+        0.5*(outerSize+innerSize),
+        innerSize,
+        outerSize,
+        edgeNodes, edges);
+        triangulateio triTopBottom;	
+        generateTRIANGULATEIOWithEdges(edgeNodes, edges, holes, outerSize*outerSize/2, triTopBottom);
+        faceTop1.projectTRIANGULATEIO(triTopBottom, PROJECTION_TYPE::XY_PLANE, OuterUpperBound[2]);
+        faceBottom1.projectTRIANGULATEIO(triTopBottom, PROJECTION_TYPE::XY_PLANE, OuterLowerBound[2]);
+        deleteTRIANGULATEIOAllocatedArrays(triTopBottom);
+
+
+        //right side
+        SurfaceMesh faceBottom2, faceTop2, faceFront2, faceBack2;
+        edgeNodes.clear();
+        edges.clear();
+        generateRectangleEdgesWithDifferentSize({OuterUpperBound[1], OuterUpperBound[2]},{InnerUpperBound[1],OuterLowerBound[2]}, 
+        innerSize,
+        outerSize, 
+        0.5*(outerSize+innerSize), 
+        0.5*(outerSize+innerSize),
+        edgeNodes, edges);
+        triangulateio triFrontBack2;	
+        generateTRIANGULATEIOWithEdges(edgeNodes, edges, holes, outerSize*outerSize/2, triFrontBack2);
+        faceFront2.projectTRIANGULATEIO(triFrontBack2, PROJECTION_TYPE::YZ_PLANE, OuterUpperBound[0]);
+        faceBack2.projectTRIANGULATEIO(triFrontBack2, PROJECTION_TYPE::YZ_PLANE, OuterLowerBound[0]);
+        deleteTRIANGULATEIOAllocatedArrays(triFrontBack2);
+
+        edgeNodes.clear();
+        edges.clear();
+        generateRectangleEdgesWithDifferentSize({OuterUpperBound[0], OuterUpperBound[1]},{OuterLowerBound[0], InnerUpperBound[1]},
+        0.5*(outerSize+innerSize), 
+        0.5*(outerSize+innerSize),
+        outerSize,
+        innerSize,
+        edgeNodes, edges);
+        triangulateio triTopBottom2;	
+        generateTRIANGULATEIOWithEdges(edgeNodes, edges, holes, outerSize*outerSize/2, triTopBottom2);
+        faceTop2.projectTRIANGULATEIO(triTopBottom2, PROJECTION_TYPE::XY_PLANE, OuterUpperBound[2]);
+        faceBottom2.projectTRIANGULATEIO(triTopBottom2, PROJECTION_TYPE::XY_PLANE, OuterLowerBound[2]);
+        deleteTRIANGULATEIOAllocatedArrays(triTopBottom2);
+
+        resultingSurfaceMesh.mergeSurfaceMesh(faceRight, 1e-8);
+        resultingSurfaceMesh.mergeSurfaceMesh(faceLeft, 1e-8);
+
+        resultingSurfaceMesh.mergeSurfaceMesh(faceFront1, 1e-8);
+        resultingSurfaceMesh.mergeSurfaceMesh(faceBack1, 1e-8);
+        resultingSurfaceMesh.mergeSurfaceMesh(faceFront2, 1e-8);
+        resultingSurfaceMesh.mergeSurfaceMesh(faceBack2, 1e-8);
+
+        resultingSurfaceMesh.mergeSurfaceMesh(faceTop1, 1e-8);
+        resultingSurfaceMesh.mergeSurfaceMesh(faceBottom1, 1e-8);
+        resultingSurfaceMesh.mergeSurfaceMesh(faceTop2, 1e-8);
+        resultingSurfaceMesh.mergeSurfaceMesh(faceBottom2, 1e-8);
+        for(auto n: resultingSurfaceMesh.nodes){
+            n->label = CONTINUUM_OUT_BORDER_POINT;
+        }
     }
 
     void generateBoundingBoxSurfaceMeshWithXYHoles(

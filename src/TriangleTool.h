@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-14 09:56:34
- * @LastEditTime: 2023-05-24 09:39:00
+ * @LastEditTime: 2023-06-12 16:38:59
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/TriangleTool.h
@@ -28,6 +28,17 @@ namespace MeshAC{
         std::vector<std::array<double,3>> &edgeNodes, std::vector<std::array<int, 2>> &edges
     );
     
+    void generateRectangleEdgesWithDifferentSize(
+        std::array<double, 2> maxPos, 
+        std::array<double,2> minPos, 
+        double leftsize, 
+        double rightsize,
+        double topSize,
+        double bottomSize,
+        std::vector<std::array<double,3>> &edgeNodes, std::vector<std::array<int, 2>> &edges
+    );
+
+
     /**
      * @brief 
      * 

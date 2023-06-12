@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-10 08:40:35
- * @LastEditTime: 2023-05-23 22:06:16
+ * @LastEditTime: 2023-06-07 11:47:28
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/CommandParser.h
@@ -14,7 +14,7 @@ namespace MeshAC{
         FT_GENERATION_FROM_EDGE_DISLOCATION_POINTS,
         FT_ADAPTIVE_REFINEMENT,
         FT_ADAPTIVE_REFINEMENT_FOR_EDGE_DISLOCATION,
-        FT_GENERATION_DEV
+        FT_GENERATION_THREE_LAYER
     };
     struct CommandInfo{
         FUNCTION_TYPE type = FT_GENERATION_FROM_POINTS;
