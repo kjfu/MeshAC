@@ -1,10 +1,10 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-28 03:09:37
- * @LastEditTime: 2023-04-01 00:19:55
+ * @LastEditTime: 2023-10-12 09:55:19
  * @LastEditors: Kejie Fu
  * @Description: 
- * @FilePath: /Mesher3DForSJTU/src/quality.h
+ * @FilePath: /MeshAC/src/quality.h
  */
 #pragma once
 
@@ -108,10 +108,10 @@ double calculateTetrahedronScaleQualityWith4Points_ISO(const T &a, const T &b, c
     if ( rap < 1.0e-200 )  return 0.0;
 
     /* quality = 36*vol^{2/3} / (3^{1/3}*rap). Q = 1 for the regular tetra of length 1. */
-    //rap = rap * sqrt(rap);        
-    
-     
-    return 36*pow(vol/6.0,2.0/3.0) / (pow(3, 1.0/3.0)* rap);
+    rap = rap * sqrt(rap);
+
+
+    return vol / rap * 12* sqrt(3);
 
 
 }
