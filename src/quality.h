@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-28 03:09:37
- * @LastEditTime: 2023-10-12 09:55:19
+ * @LastEditTime: 2023-10-12 09:56:44
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/quality.h
@@ -107,11 +107,12 @@ double calculateTetrahedronScaleQualityWith4Points_ISO(const T &a, const T &b, c
     rap += cdx*cdx + cdy*cdy + cdz*cdz;
     if ( rap < 1.0e-200 )  return 0.0;
 
-    /* quality = 36*vol^{2/3} / (3^{1/3}*rap). Q = 1 for the regular tetra of length 1. */
+
+    /* quality = 6*vol / len^3/2 * 12 * sqrt(3). Q = 1 for the regular tetra of length 1. */
     rap = rap * sqrt(rap);
 
 
-    return vol / rap * 12* sqrt(3);
+    return vol / rap * 12 * sqrt(3);
 
 
 }
