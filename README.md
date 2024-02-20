@@ -175,44 +175,7 @@ atdef = get_atdef(R)
 atc0 = AtC(atdef, h, L)
 ```
 
-### Adaptive
-
-Solve $\to$ Estimate $\to$ Mark $\to$ Refine
-
-1. Solve
-
-`src/AtC` + `src/Solve`: We use `minimise!` which is based on the implementation of `JuLIP.Solve` and `nsoli` as well.
-
-2. Estimate
-
-$\Vert\nabla u\Vert_{L^2(T)}$ for all $T\in\mathcal{T}$, where $\mathcal{T}$ is constructed by `ACFIO` part.
-
-3. Mark
-
-- Tetrahedral elements' indices.   
-- Appending points' positions.
-
-4. Refine
-
-Call `mesher3d -r`, see `./src/adaptive.jl` for more details.
-
-This refinement functional requires \*.mesh, \*.remash, and \*.value files in the same path.
-
-- \*.mesh: original mesh files to be refined.
-- \*.remesh: consists of two fields labeled with
-	- Append\_points: vectors represent atomistic points to be appened adjacent to the interface.   
-	- Refine_elements: indices of elements to be refined.
-- \*.value: consists of two fileds labeled with (could be used individually)
-	- scalar density
-	- vector displacement
-
-Example:
-```julia
-include("./examples/test_adaptive.jl")
-```
-
 ## Development
-
 
 MeshAC is under active development. Please don't hesitate to open feature requests to help us guide development. We more than welcome contributions!
 
@@ -227,14 +190,11 @@ MeshAC has been used in the following publications.
 If you use the codes in a publication, please cite the repo using the .bib,
 
 ```
-@inproceedings{...,
- author = {...},
- booktitle = {...},
- publisher = {...},
- title = {...},
- url = {...},
- volume = {...},
- year = {...}
+@inproceedings{fu2024meshac,
+  title={MeshAC: A 3D Mesh Generation and Adaptation Package for Multiscale Coupling Methods},
+  author={Fu, Kejie and Liao, Mingjie and Wang, Yangshuai and Chen, Jianjun and Zhang, Lei},
+  journal={arXiv preprint arXiv:2402.09446},
+  year={2024}
 }
 ```
 
