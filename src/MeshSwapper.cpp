@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-03-27 19:35:28
- * @LastEditTime: 2023-04-10 08:53:25
+ * @LastEditTime: 2024-02-21 07:51:32
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/MeshSwapper.cpp
@@ -55,6 +55,10 @@ namespace MeshAC{
         
     }
 
+
+    bool MeshSwapper::checkFaceSwap(Tetrahedron *tet, int iLocal, std::vector<double> &qualities){
+        return true;
+    }
 
     bool MeshSwapper::checkEdgeSwap(Tetrahedron *tet, int iLocal, VolumeShell &aShell, VolumeUmbrella &anUmbrella, std::vector<double> &qualities){
         mesh->getVolumeShell(tet, iLocal, aShell);

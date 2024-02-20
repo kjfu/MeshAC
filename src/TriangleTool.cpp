@@ -1,5 +1,6 @@
 #include "TriangleTool.h"
 #include <string.h>
+#include <string>
 #include <cmath>
 #include <unordered_map>
 #include <unordered_set>
