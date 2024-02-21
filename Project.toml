@@ -1,0 +1,11 @@
+[deps]
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+Isaac = "c2548312-a4fd-5d16-85d3-38ef7dd54d98"
+JuLIP = "945c410c-986d-556a-acb1-167a618e0462"
+LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+NeighbourLists = "2fcf5ba9-9ed4-57cf-b73f-ff513e316b9c"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+QHull = "a8468747-bd6f-53ef-9e5c-744dbc5c59e7"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"

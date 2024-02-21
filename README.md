@@ -118,13 +118,16 @@ Atomistic-to-continuum coupling method in Julia. The current implementation is b
 
 The atomistic computations involved are heavily depends on the pure Julia package [JuLIP](https://github.com/JuliaMolSim/JuLIP.jl) (Julia Library for Interatomic Potentials).
 
-1. Install Julia 1.8.5 from [here](https://julialang.org/downloads/); 
-2. Run the following Julia commands step by step:
+1. Install Julia 1.10.1 from [here](https://julialang.org/downloads/); 
+2. Install necessary registry and then open a new activate environment:
 ```
-using Pkg; 
 ] registry add https://github.com/JuliaRegistries/General"; 
 ] registry add https://github.com/ACEsuit/ACEregistry"; 
-] add JuLIP, DelimitedFiles, Printf, NeighbourLists, QHull, Optim, LineSearches, SparseArrays, nsoli, PyCall
+] activate .
+```
+3. Run the following Julia command to install the required packages:
+```
+] add JuLIP, DelimitedFiles, Printf, NeighbourLists, QHull, Optim, LineSearches, SparseArrays, Isaac, PyCall
 ```
 
 Tips:
