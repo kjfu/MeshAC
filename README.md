@@ -1,7 +1,7 @@
 <!--
  * @Author: Kejie Fu
  * @Date: 2023-03-11 23:20:09
- * @LastEditTime: 2023-04-23 23:22:17
+ * @LastEditTime: 2024-02-22 23:22:17
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/README.md
@@ -31,6 +31,7 @@ mkdir build
 cd build
 cmake ..
 make
+cp ./build/MeshAC ./MeshAC
 ```
 ### Command Line Switches
 
@@ -127,7 +128,7 @@ The atomistic computations involved are heavily depends on the pure Julia packag
 ```
 3. Run the following Julia command to install the required packages:
 ```
-] add JuLIP, DelimitedFiles, Printf, NeighbourLists, QHull, Optim, LineSearches, SparseArrays, Isaac, PyCall
+] add JuLIP, DelimitedFiles, Printf, NeighbourLists, QHull, Optim, LineSearches, SparseArrays, Isaac, PyCall, Plots, ASE, ScatteredInterpolation
 ```
 
 Tips:
@@ -146,22 +147,9 @@ The functionals of FIO are to read/write:
 
 and write .dump files for visualization.
 
-Example:
-
-```julia
-fn = "a.mesh"
-# X: atom positions and outer continuum points; Xtype: interface information
-ACFIO.write_mesh(fn, X, Xtype)
-# call `mesher3d` to build coupled mesh
-ofn = "ac.mesh"
-run(`$meshpath -s $h -i $fn -o $ofn`)
-# X: nodes; T: mesh topology
-X, T = ACFIO.read_mesh(ofn)
-```
-
 ### AtC
 
-Major struct contains geometrical and computational information.
+Major struct contains geometry and computational information.
 
 To construct an AtC objective invokes:   
 ```
@@ -169,13 +157,67 @@ function AtC(Ra::Int64, bw::Int64, Lmsh, h; Rbuf=2, sp=:W, r0=rnn(:W), defects=:
 ```
 Note that `meshpath` is the path of mesher toolkit that may differ from each devices.
 
-Example:
-
+## Example
+Step 1: Construct the atomistic model in atomistic region:
 ```julia
-# construct atomistic region with defects. R: radius; 
-atdef = get_atdef(R)
-# construct a/c coupling structure. h: mesh size; L: size of computational domain
-atc0 = AtC(atdef, h, L)
+] activate .
+include("./JuliaAC/dihole.jl")
+# construct atomistic region with di-hole defects 
+# L: repeated size (keep it sufficiently large); Lb: the inner ball size; Lw: the width of torus.
+L = 20; Lb = 13.0; Lw = 16.0;
+atdef = get_atdef(L, Lb, Lw);
+```
+Step 2: Write atomistic mesh:
+```julia
+Xat = positions(atdef)
+cb = [-1 1 1 -1 -1 1 1 -1; -1 -1 1 1 -1 -1 1 1; -1 -1 -1 -1 1 1 1 1]
+Xcb = (L + 20) .* cb
+X = hcat(mat(Xat), Xcb)
+Xtype = zeros(Int64, length(atdef))
+append!(Xtype, ones(Int64, 8))
+fn = "./data/dihole_A.mesh"
+# X: atom positions and outer continuum points; Xtype: interface information
+ACFIO.write_mesh(fn, X, Xtype)
+```
+Step 3: Build AtC mesh and read the coupled mesh in Julia:
+```julia
+# call `mesher3d` to build coupled mesh
+ofn = "./data/dihole_AC.mesh"
+# the density of nodes in continuum region
+h = 10
+run(`./MeshAC -s $h -i $fn -o $ofn`)
+```
+Step 4: Construct a/c coupling structure:
+```julia
+# X: nodes; T: mesh topology
+X, T = ACFIO.read_mesh(ofn)
+iBdry = findall(x->x==1.0, X[4,:])
+XType = X[4,:]
+nat = [findall(x->x==0.0, XType); findall(x->x==2.0, XType);]
+Xat = deepcopy(X[1:3, nat])
+set_positions!(atdef, Xat)
+# alternative data
+data = Dict{String, Real}()
+U = zeros(3, size(X, 2))
+∇U, volT, J = gradient(T, X, U)
+wat = bulk(:W, cubic = true)
+V0 = det(cell(wat))/2
+# final a/c stucture
+atc = AtC{eltype(X)}(atdef, V0, X[1:3, :], X[4, :], U, ∇U, T[1:4, :], T[5,:], 3, 2, J, wat, iBdry, data);
+```
+Step 5: Alternatively, one can call the following command directly:
+```julia
+] activate .
+include("./JuliaAC/dihole.jl")
+# collect model parameters
+L = 20; Lb = 13.0; Lw = 16.0;
+Lc = 20; h = 10;
+input_name = "./data/double-voids.mesh"
+output_name = "./data/double-voids-coupled.mesh"
+# construct atomistic region with defects
+atdef = get_atdef(L, Lb, Lw)
+# construct a/c coupling structure
+atc = AtC_di(atdef, h, L, Lc; fn = input_name, ofn = output_name);
 ```
 
 ## Development
@@ -193,11 +235,12 @@ MeshAC has been used in the following publications.
 If you use the codes in a publication, please cite the repo using the .bib,
 
 ```
-@inproceedings{fu2024meshac,
-  title={MeshAC: A 3D Mesh Generation and Adaptation Package for Multiscale Coupling Methods},
-  author={Fu, Kejie and Liao, Mingjie and Wang, Yangshuai and Chen, Jianjun and Zhang, Lei},
-  journal={arXiv preprint arXiv:2402.09446},
-  year={2024}
+@misc{fu2024meshac,
+      title={MeshAC: A 3D Mesh Generation and Adaptation Package for Multiscale Coupling Methods},
+      author={Kejie Fu and Mingjie Liao and Yangshuai Wang and Jianjun Chen and Lei Zhang},
+	  eprint={2402.09446},
+      archivePrefix={arXiv},
+      year={2024}
 }
 ```
 

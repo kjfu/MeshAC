@@ -1,6 +1,7 @@
 using JuLIP, Plots, LinearAlgebra, NeighbourLists, ASE
 
 include("FIO.jl")
+include("AtC.jl")
 
 function plotat(at, i, ii, ibdy, iibdy)
     x, y, z = xyz(at)

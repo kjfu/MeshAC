@@ -1,7 +1,7 @@
 
 using JuLIP, NeighbourLists, Printf, QHull, PyCall
 
-import JuLIP: energy, forces
+import JuLIP: energy, forces, gradient
 import ASE
 
 include("utils.jl")
@@ -13,9 +13,11 @@ mutable struct AtC{T} <: AbstractAtC{T} #where T # <: AbstractFloat
 	at::AbstractAtoms{T}
 	V0::T
 	X::Array{T, 2}			# nodes' positions
+	XType::Array{T, 1}
 	U::Array{T, 2}			# nodes' displacements
 	∇U::Array{T, 3} 
 	T::Array{Int64, 2}		# elements
+	TType::Array{Int64, 1}
 	Ra::Float64				# radius of atomistic region
 	bw::Float64				# additional width of blending region
 	J::Array{T}				# Jacobian?
@@ -96,12 +98,46 @@ function AtC(Ra::Int64, bw::Int64, Lmsh, h;
 	return atc
 end
 
+function AtC_di(atdef, h, L, Lc; fn = "../FIO/2torus_new.mesh", ofn = "../FIO/2torus_new_out3d.mesh")
+	Xat = positions(atdef)
+	cb = [-1 1 1 -1 -1 1 1 -1; -1 -1 1 1 -1 -1 1 1; -1 -1 -1 -1 1 1 1 1]
+	Xcb = (L + Lc) .* cb
+	X = hcat(mat(Xat), Xcb)
+	Xtype = zeros(Int64, length(atdef))
+	append!(Xtype, ones(Int64, 8))
+	ACFIO.write_mesh(fn, X, Xtype)
+
+	# call `mesher3d` to build coupled mesh
+	run(`./MeshAC -s $h -i $fn -o $ofn`)
+	X, T = ACFIO.read_mesh(ofn)
+	iBdry = findall(x->x==1.0, X[4,:])
+
+	XType = X[4,:]
+	nat = [findall(x->x==0.0, XType); findall(x->x==2.0, XType);]
+	Xat = deepcopy(X[1:3,nat])
+	set_positions!(atdef, Xat)
+
+	## alternative data
+	data = Dict{String, Real}()
+	U = zeros(3, size(X,2))
+	∇U, volT, J = gradient(T, X, U)
+	wat = bulk(:W, cubic = true)
+	V0 = det(cell(wat))/2
+
+	atc = AtC{eltype(X)}(atdef, V0, X[1:3, :], X[4, :], U, ∇U, T[1:4, :], T[5,:], 3, 2, J, wat, iBdry, data)
+	atc.data["xc"] = [0.0, 0.0, 0.0]
+	atc.data["volT"] = copy(volT)
+	atc.data["XType"] = copy(X[4,:])
+	atc.data["TType"] = copy(T[5,:])
+	return atc
+end
+
 gradient(config::AtC{T};domain=1:size(config.T,2)) where T = gradient(config.T, config.X, config.U;domain=domain)
 
 """
 gradient: (T::Tetrahedron, X::positions, U::displacements) ⟶ (∇U::gradients, volT::volumes)   
 """
-function gradient(T::Array{Int64,2}, X::Array{Float64,2}, U::Array{Float64,2}; domain=1:size(T,2))
+function gradient(T, X, U; domain=1:size(T,2))
 	nT = size(T,2)
 	J = zeros(Float64, 3, 3)
 	Du = zeros(Float64, 3, 3)
