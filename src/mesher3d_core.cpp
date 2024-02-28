@@ -1228,8 +1228,8 @@ void parseZHandleV3(SurfaceMesh &zHandleSurface, Vector3D xyzmax, Vector3D xyzmi
 
 	//Generate outer surface mesh	
 	SurfaceMesh faceBottom, faceTop, faceFront, faceBack, faceLeft, faceRight;
-	std::array<double, 2> oxymax({oxyzmax[0], oxyzmax[1]});
-	std::array<double, 2> oxymin({oxyzmin[0], oxyzmin[1]});
+	std::array<double, 2> oxymax = {oxyzmax[0], oxyzmax[1]};
+	std::array<double, 2> oxymin = {oxyzmin[0], oxyzmin[1]};
 
 	generateRectangle({xyzmax[0],xyzmax[1]},{xyzmin[0], xyzmin[1]}, size, bottomEdgeNodes, bottomEdges);
 	generateRectangle({xyzmax[0],xyzmax[1]},{xyzmin[0], xyzmin[1]}, size, topEdgeNodes, topEdges);
@@ -1824,8 +1824,8 @@ void generateZHandleMesh(const std::string &fileIn, const std::string &fileOut, 
 
 	//Generate outer surface mesh	
 	SurfaceMesh faceBottom, faceTop, faceFront, faceBack, faceLeft, faceRight;
-	std::array<double, 2> oxymax({oxyzmax[0], oxyzmax[1]});
-	std::array<double, 2> oxymin({oxyzmin[0], oxyzmin[1]});
+	std::array<double, 2> oxymax = {oxyzmax[0], oxyzmax[1]};
+	std::array<double, 2> oxymin = {oxyzmin[0], oxyzmin[1]};
 
 
 	generateRectangle({xyzmax[0],xyzmax[1]},{xyzmin[0], xyzmin[1]}, size, bottomEdgeNodes, bottomEdges);
@@ -1916,8 +1916,8 @@ void generatePeriodicBoundaryConditionMesh(const std::string &fileIn, const std:
 	}
 
 
-	std::array<double, 2> oxymax({oxyzmax[0], oxyzmax[1]});
-	std::array<double, 2> oxymin({oxyzmin[0], oxyzmin[1]});
+	std::array<double, 2> oxymax = {oxyzmax[0], oxyzmax[1]};
+	std::array<double, 2> oxymin = {oxyzmin[0], oxyzmin[1]};
 	std::vector<std::array<int, 2>> edges;
 	std::vector<std::array<double, 2>> edgeNodes;
 	generateConvaxHullFromPointsInPlane(planeNodes, oxymax, oxymin, edgeNodes, edges);

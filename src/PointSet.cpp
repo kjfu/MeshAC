@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:29:22
- * @LastEditTime: 2023-04-15 10:10:15
+ * @LastEditTime: 2024-02-28 19:33:53
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/PointSet.cpp
@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <limits>
 namespace MeshAC {
     int PointSet::loadPointSet(const std::string &filePath){
 	    std::ifstream inFile(filePath);

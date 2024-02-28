@@ -1,7 +1,7 @@
 /*
  * @Author: Kejie Fu
  * @Date: 2023-04-13 23:16:56
- * @LastEditTime: 2023-06-12 17:05:17
+ * @LastEditTime: 2024-02-28 19:39:04
  * @LastEditors: Kejie Fu
  * @Description: 
  * @FilePath: /MeshAC/src/Core.cpp
@@ -1249,8 +1249,8 @@ namespace MeshAC{
     ){
         hasHoles= true;
         SurfaceMesh faceBottom, faceTop, faceFront, faceBack, faceLeft, faceRight;
-        std::array<double, 2> oxymax({upperBound[0], upperBound[1]});
-        std::array<double, 2> oxymin({lowerBound[0], lowerBound[1]});
+        std::array<double, 2> oxymax = {upperBound[0], upperBound[1]};
+        std::array<double, 2> oxymin = {lowerBound[0], lowerBound[1]};
 
         std::vector<std::array<double,3>> topHoles;
         std::vector<std::array<double,3>> bottomHoles;
